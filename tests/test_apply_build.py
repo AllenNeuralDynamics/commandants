@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from commandants import AntsApplyTransforms, AntsApplyTransformsToPoints
 
 
@@ -23,6 +25,7 @@ def test_apply_transforms_with_inversion_and_order():
         "--output", "resampled.nii.gz",
         "--interpolation", "BSpline[3]",
         "--default-value", "0",
+        "--float", "1",  # single precision is the default
         "--transform", "out_1Warp.nii.gz",
         "--transform", "[out_0GenericAffine.mat,1]",
         "--verbose", "0",
@@ -55,3 +58,28 @@ def test_apply_transforms_to_points():
 def test_declared_output():
     apply = AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii")
     assert apply.declared_outputs() == {"output": "o.nii"}
+
+
+def test_default_is_single_precision():
+    argv = AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii").build_command()
+    assert argv[argv.index("--float") + 1] == "1"
+
+
+def test_use_float_false_gives_double():
+    argv = AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii", use_float=False).build_command()
+    assert argv[argv.index("--float") + 1] == "0"
+
+
+def test_use_float_none_omits_flag():
+    argv = AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii", use_float=None).build_command()
+    assert "--float" not in argv
+
+
+def test_output_data_type_emitted():
+    argv = AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii", output_data_type="float").build_command()
+    assert argv[argv.index("--output-data-type") + 1] == "float"
+
+
+def test_output_data_type_invalid_raises():
+    with pytest.raises(ValueError, match="output_data_type"):
+        AntsApplyTransforms(3, "m.nii", "f.nii", "o.nii", output_data_type="float32")

@@ -258,11 +258,19 @@ reg.extra_args("--use-estimate-learning-rate-once", "1")
 from commandants import AntsApplyTransforms
 
 apply = AntsApplyTransforms(3, "moving.nii.gz", "fixed.nii.gz", "resampled.nii.gz",
-                            interpolation="BSpline[3]")
+                            interpolation="BSpline[3]",
+                            output_data_type="float")   # stored pixel type (char/short/int/float/...)
 apply.add_transform("out_1Warp.nii.gz")
 apply.add_transform("out_0GenericAffine.mat")   # applied first (ANTs order)
 apply.run()
 ```
+
+> **Precision defaults to single (`--float 1`).** `AntsRegistration` and
+> `AntsApplyTransforms` compute in single precision by default (like ANTsPyX's
+> `singleprecision=True`, and easier on memory for large volumes). Pass
+> `use_float=False` for double, or `use_float=None` to omit the flag entirely (ANTs'
+> own default is double). This is *computation* precision — `output_data_type=`
+> separately controls the stored pixel type of the written image.
 
 > **Argument order — `input`/`reference`, not `fixed`/`moving`.** commandants uses
 > ANTs' own `antsApplyTransforms` terminology, which is **not** ANTsPyX's. The 2nd

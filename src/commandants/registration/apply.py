@@ -10,6 +10,9 @@ from ..core.runner import AntsCommand
 
 PathLike = Union[str, Path]
 
+# Valid values for antsApplyTransforms --output-data-type.
+_OUTPUT_DATA_TYPES = {"char", "uchar", "short", "int", "float", "double", "default"}
+
 # Accept friendly names or the raw integer ANTs expects for --input-image-type.
 _IMAGE_TYPES = {
     "scalar": 0,
@@ -37,6 +40,12 @@ class AntsApplyTransforms(AntsCommand):
     Transforms are applied in the order ANTs expects (the *last* transform added
     is applied *first* to the moving image). Each transform may be inverted --
     handy for reusing a forward affine in the inverse direction.
+
+    Computations default to single precision (``use_float=True``); pass
+    ``use_float=False`` for double or ``None`` to omit the flag. ``output_data_type``
+    (``char``/``uchar``/``short``/``int``/``float``/``double``/``default``) sets the
+    *stored* pixel type of the output image, independent of the computation
+    precision.
     """
 
     binary_name = "antsApplyTransforms"
@@ -51,7 +60,8 @@ class AntsApplyTransforms(AntsCommand):
         interpolation: Optional[str] = None,
         image_type: Union[int, str, None] = None,
         default_value: Optional[float] = None,
-        use_float: Optional[bool] = None,
+        use_float: Optional[bool] = True,  # single precision by default (memory-friendly)
+        output_data_type: Optional[str] = None,
         verbose: bool = False,
         ants_path: Optional[PathLike] = None,
     ) -> None:
@@ -64,6 +74,12 @@ class AntsApplyTransforms(AntsCommand):
         self.image_type = image_type
         self.default_value = default_value
         self.use_float = use_float
+        if output_data_type is not None and output_data_type not in _OUTPUT_DATA_TYPES:
+            raise ValueError(
+                f"output_data_type must be one of {sorted(_OUTPUT_DATA_TYPES)}; "
+                f"got {output_data_type!r}"
+            )
+        self.output_data_type = output_data_type
         self.verbose = verbose
         self._transforms: List[Tuple[PathLike, bool]] = []
 
@@ -99,6 +115,8 @@ class AntsApplyTransforms(AntsCommand):
             args += ["--default-value", str(self.default_value)]
         if self.use_float is not None:
             args += ["--float", "1" if self.use_float else "0"]
+        if self.output_data_type is not None:
+            args += ["--output-data-type", self.output_data_type]
         for i, (tx, invert) in enumerate(self._transforms):
             path = self._resolve(tx, f"transform{i}")
             args += ["--transform", bracket(path, True) if invert else path]

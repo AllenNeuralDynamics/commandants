@@ -29,7 +29,7 @@ def _rigid_affine_syn(**kwargs) -> AntsRegistration:
 def test_estimate_with_explicit_shape():
     est = _rigid_affine_syn().estimate_resources(shape=(256, 256, 256))
     assert est.n_voxels == 256 ** 3
-    assert est.real_bytes == 8  # double is the ANTs default
+    assert est.real_bytes == 4  # commandants defaults to single precision
     assert est.peak_memory_bytes > 0
     assert len(est.per_stage) == 3
     # The SyN (deformable) stage should dominate peak memory.
@@ -41,7 +41,7 @@ def test_estimate_with_explicit_shape():
 
 
 def test_use_float_halves_real_bytes_and_lowers_memory():
-    e_double = _rigid_affine_syn().estimate_resources(shape=(128, 128, 128))
+    e_double = _rigid_affine_syn(use_float=False).estimate_resources(shape=(128, 128, 128))
     e_float = _rigid_affine_syn(use_float=True).estimate_resources(shape=(128, 128, 128))
     assert e_double.real_bytes == 8 and e_float.real_bytes == 4
     assert e_float.peak_memory_bytes < e_double.peak_memory_bytes

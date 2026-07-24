@@ -55,6 +55,7 @@ def test_full_two_stage_command_with_point_constraint():
     expected = [
         "antsRegistration",
         "--dimensionality", "3",
+        "--float", "1",  # single precision is the default
         "--output", "[out_,out_Warped.nii.gz]",
         "--write-composite-transform", "1",
         "--initial-moving-transform", "[fixed.nii.gz,moving.nii.gz,1]",

@@ -76,7 +76,7 @@ class AntsRegistration(AntsCommand):
         use_histogram_matching: Optional[bool] = None,
         collapse_output_transforms: Optional[bool] = None,
         write_composite_transform: bool = False,
-        use_float: Optional[bool] = None,
+        use_float: Optional[bool] = True,  # single precision by default (memory-friendly)
         random_seed: Optional[int] = None,
         restrict_deformation: Optional[Sequence[float]] = None,
         write_interval_volumes: Optional[int] = None,

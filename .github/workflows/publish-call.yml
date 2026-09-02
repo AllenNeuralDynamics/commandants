@@ -1,0 +1,21 @@
+name: Publish
+
+# Thin wrapper around the AllenNeuralDynamics shared publish reusable workflow.
+# Fires when a v* tag is pushed (by bump-call.yml, or manually for the first
+# release) and publishes to PyPI using the org AIND_PYPI_TOKEN.
+
+on:
+  push:
+    tags: ["v[0-9]*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    uses: AllenNeuralDynamics/galen-uv-workflows/.github/workflows/publish.yml@v2
+    with:
+      tag-name: ${{ github.ref_name }}
+      python-version: "3.13"
+      publish-to-pypi: true
+    secrets:
+      repo-token: ${{ secrets.GITHUB_TOKEN }}
+      pypi-token: ${{ secrets.AIND_PYPI_TOKEN }}

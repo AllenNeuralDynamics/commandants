@@ -78,29 +78,9 @@ from .registration import (
     is_point_set_metric,
 )
 
-def _resolve_version() -> str:
-    # Prefer the file setuptools-scm writes at build/install time...
-    try:
-        from ._version import version as _v  # type: ignore
-
-        return _v
-    except Exception:
-        pass
-    # ...then the installed package metadata...
-    try:
-        from importlib.metadata import PackageNotFoundError, version as _pkg_version
-
-        try:
-            return _pkg_version("commandants")
-        except PackageNotFoundError:
-            pass
-    except Exception:
-        pass
-    # ...otherwise we're running from a source tree with no build info.
-    return "0.0.0+unknown"
-
-
-__version__ = _resolve_version()
+# Version is static and bumped by commitizen (see [tool.commitizen] in
+# pyproject.toml, version_files points here). Keep the assignment on one line.
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",

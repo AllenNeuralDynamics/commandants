@@ -1,0 +1,30 @@
+name: Bump version
+
+# Thin wrapper around the AllenNeuralDynamics shared commitizen bump-version
+# reusable workflow. Runs after CI succeeds on main; commitizen bumps the version
+# (pyproject + src/commandants/__init__.py), commits "bump: ...", and pushes a v*
+# tag -- which triggers publish-call.yml. Requires the org SERVICE_TOKEN so the
+# push re-triggers downstream workflows.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  bump:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    uses: AllenNeuralDynamics/galen-uv-workflows/.github/workflows/bump-version.yml@v2
+    with:
+      default-branch: main
+    secrets:
+      repo-token: ${{ secrets.SERVICE_TOKEN }}

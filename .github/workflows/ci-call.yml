@@ -1,0 +1,39 @@
+name: CI
+
+# Thin wrapper around the AllenNeuralDynamics shared CI reusable workflow.
+# Mirrors aind-mri-utils. run-mypy is off for now (commandants is not yet typed
+# to a mypy bar); flip to true after a typing pass.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  run-ci:
+    # Skip draft PRs, bot commits, and the commitizen "bump:" commit (which would
+    # otherwise re-trigger CI -> bump in a loop).
+    if: >-
+      github.event.pull_request.draft != true &&
+      github.actor != 'github-actions[bot]' &&
+      !startsWith(github.event.head_commit.message, 'bump:')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.13"]
+    uses: AllenNeuralDynamics/galen-uv-workflows/.github/workflows/ci.yml@v2
+    with:
+      os: ${{ matrix.os }}
+      python-version: ${{ matrix.python-version }}
+      package-name: commandants
+      run-mypy: false
+    secrets:
+      repo-token: ${{ secrets.GITHUB_TOKEN }}

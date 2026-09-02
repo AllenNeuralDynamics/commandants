@@ -1,24 +1,26 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "commandants"
-dynamic = ["version"]
+version = "0.2.0"
 description = "A thin, transparent Python wrapper for the ANTs command-line tools (commandANTs)."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
-authors = [{ name = "Yoni Browning" }]
+license = "MIT"
+authors = [
+    { name = "Allen Neural Dynamics", email = "yoni.browning@alleninstitute.org" },
+]
 keywords = ["ANTs", "registration", "neuroimaging", "medical-imaging", "wrapper", "CLI"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 # Zero required runtime dependencies: the core only shells out to ANTs.
@@ -33,16 +35,16 @@ dev = ["pytest>=7.0", "SimpleITK>=2.2", "numpy>=1.21"]
 commandants = "commandants.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/yonibrowning/commandants"
-Issues = "https://github.com/yonibrowning/commandants/issues"
+Repository = "https://github.com/AllenNeuralDynamics/commandants/"
+Issues = "https://github.com/AllenNeuralDynamics/commandants/issues"
+Changelog = "https://github.com/AllenNeuralDynamics/commandants/blob/main/CHANGELOG.md"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/commandants"]
 
-[tool.setuptools_scm]
-# Version is derived from git: the latest v* tag plus commits-since and the commit
-# hash (e.g. 0.1.1.dev3+g9b7d12b). Cut a release by tagging: git tag v0.2.0.
-version_file = "src/commandants/_version.py"
+[tool.commitizen]
+version_provider = "pep621"
+version_files = ["src/commandants/__init__.py:__version__"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

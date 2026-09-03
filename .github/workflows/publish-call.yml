@@ -9,8 +9,15 @@ on:
     tags: ["v[0-9]*"]
   workflow_dispatch:
 
+permissions:
+  contents: write # the reusable workflow creates a GitHub Release + uploads assets
+
+concurrency:
+  group: release
+  cancel-in-progress: false # let releases finish
+
 jobs:
-  publish:
+  run-release:
     uses: AllenNeuralDynamics/galen-uv-workflows/.github/workflows/publish.yml@v2
     with:
       tag-name: ${{ github.ref_name }}

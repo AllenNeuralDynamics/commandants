@@ -82,7 +82,7 @@ from .registration import (
 
 # Version is static and bumped by commitizen (see [tool.commitizen] in
 # pyproject.toml, version_files points here). Keep the assignment on one line.
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "__version__",

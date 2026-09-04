@@ -4,7 +4,7 @@ All notable changes to this project are documented here. This file is maintained
 [commitizen](https://commitizen-tools.github.io/commitizen/) from conventional-commit
 messages. The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## 0.3.0
 
 ### Features
 

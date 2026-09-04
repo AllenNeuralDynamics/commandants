@@ -53,7 +53,8 @@ Nothing downloads implicitly. If you *want* auto-fetch on first use, opt in:
 
 ```python
 import os
-os.environ["COMMANDANTS_AUTO_INSTALL"] = "1"   # or resolve_binary(..., auto_install=True)
+
+os.environ["COMMANDANTS_AUTO_INSTALL"] = "1"  # or resolve_binary(..., auto_install=True)
 ```
 
 Other CLI subcommands: `commandants list`, `commandants uninstall-ants`,
@@ -64,7 +65,13 @@ platform pick.
 
 ```python
 from commandants import (
-    AntsRegistration, Rigid, SyN, MI, CC, PSE, Convergence,
+    AntsRegistration,
+    Rigid,
+    SyN,
+    MI,
+    CC,
+    PSE,
+    Convergence,
 )
 
 reg = AntsRegistration(
@@ -81,8 +88,7 @@ reg.initialize_from_images("fixed.nii.gz", "moving.nii.gz", init="center-of-mass
 # Stage 1: rigid, mutual information
 reg.add_stage(
     transform=Rigid(gradient_step=0.1),
-    metrics=MI("fixed.nii.gz", "moving.nii.gz", weight=1.0, bins=32,
-               sampling="Regular", sampling_pct=0.25),
+    metrics=MI("fixed.nii.gz", "moving.nii.gz", weight=1.0, bins=32, sampling="Regular", sampling_pct=0.25),
     convergence=Convergence([1000, 500, 250, 100], threshold=1e-6, window=10),
     shrink_factors=[8, 4, 2, 1],
     smoothing_sigmas=[3, 2, 1, 0],
@@ -93,17 +99,22 @@ reg.add_stage(
     transform=SyN(gradient_step=0.1, update_field_variance=3, total_field_variance=0),
     metrics=[
         CC("fixed.nii.gz", "moving.nii.gz", weight=1.0, radius=4),
-        PSE("fixed_points.csv", "moving_points.csv",   # <-- constrain the warp
-            weight=0.5, point_set_sigma=1.0, sampling_pct=0.5),
+        PSE(
+            "fixed_points.csv",
+            "moving_points.csv",  # <-- constrain the warp
+            weight=0.5,
+            point_set_sigma=1.0,
+            sampling_pct=0.5,
+        ),
     ],
     convergence=Convergence([100, 70, 50, 20]),
     shrink_factors=[8, 4, 2, 1],
     smoothing_sigmas=[3, 2, 1, 0],
 )
 
-print(reg.to_shell())     # inspect the exact command (no ANTs needed)
-result = reg.run()        # execute; raises AntsRuntimeError on failure
-warped = result.load("warped")   # -> SimpleITK.Image (needs the [io] extra)
+print(reg.to_shell())  # inspect the exact command (no ANTs needed)
+result = reg.run()  # execute; raises AntsRuntimeError on failure
+warped = result.load("warped")  # -> SimpleITK.Image (needs the [io] extra)
 ```
 
 ### Presets (ANTsPyX-style)
@@ -114,8 +125,9 @@ Don't want to hand-build stages? Use a preset — it returns a ready
 ```python
 from commandants import presets
 
-reg = presets.syn("fixed.nii.gz", "moving.nii.gz", "out_",
-                  warped_output="out_Warped.nii.gz", use_float=True, verbose=True)
+reg = presets.syn(
+    "fixed.nii.gz", "moving.nii.gz", "out_", warped_output="out_Warped.nii.gz", use_float=True, verbose=True
+)
 reg.run(stream=True)
 ```
 
@@ -148,18 +160,18 @@ exposes exactly where they went:
 
 ```python
 import SimpleITK as sitk
+
 fixed = sitk.ReadImage("fixed.nii.gz")
 moving = sitk.ReadImage("moving.nii.gz")
 
 reg = AntsRegistration(3, output="out_")
-reg.initialize_from_images(fixed, moving)            # SimpleITK images
-reg.add_stage(SyN(), CC(fixed, moving), Convergence([100, 70, 50]),
-              [4, 2, 1], [2, 1, 0])
+reg.initialize_from_images(fixed, moving)  # SimpleITK images
+reg.add_stage(SyN(), CC(fixed, moving), Convergence([100, 70, 50]), [4, 2, 1], [2, 1, 0])
 
-result = reg.run()                 # writes temp inputs, runs ANTs
-print(result.temp_dir)             # e.g. .../commandants_ab12cd
-print(result.workspace.files)      # every temp file written
-print(result.workspace.inputs)     # {'init_fixed': '.../init_fixed.nii.gz', ...}
+result = reg.run()  # writes temp inputs, runs ANTs
+print(result.temp_dir)  # e.g. .../commandants_ab12cd
+print(result.workspace.files)  # every temp file written
+print(result.workspace.inputs)  # {'init_fixed': '.../init_fixed.nii.gz', ...}
 ```
 
 Control where temp files live and whether they persist:
@@ -167,7 +179,7 @@ Control where temp files live and whether they persist:
 ```python
 from commandants import TempWorkspace
 
-result = reg.run(temp_dir="D:/scratch", keep_temp=True)   # choose the dir; keep files
+result = reg.run(temp_dir="D:/scratch", keep_temp=True)  # choose the dir; keep files
 # or hand in a managed workspace that cleans up on exit:
 with TempWorkspace(base="D:/scratch", keep=False) as ws:
     reg.run(workspace=ws)
@@ -185,9 +197,9 @@ Get a rough peak-memory (and weak runtime) estimate for a built registration
 ```python
 est = reg.estimate_resources(shape=(256, 256, 180), threads=8)  # or fixed=<path/SITK image>
 print(est.summary())
-est.peak_memory_bytes      # ~2.5 GiB here; drops to ~1.3 GiB with use_float=True
-est.per_stage              # per-stage breakdown (the SyN stage dominates)
-est.est_runtime_seconds    # very rough
+est.peak_memory_bytes  # ~2.5 GiB here; drops to ~1.3 GiB with use_float=True
+est.per_stage  # per-stage breakdown (the SyN stage dominates)
+est.est_runtime_seconds  # very rough
 ```
 
 The image dimensions come from the fixed image (inferred from your init/metric
@@ -257,11 +269,11 @@ reg.extra_args("--use-estimate-learning-rate-once", "1")
 ```python
 from commandants import AntsApplyTransforms
 
-apply = AntsApplyTransforms(3, "moving.nii.gz", "fixed.nii.gz", "resampled.nii.gz",
-                            interpolation="BSpline[3]",
-                            output_data_type="float")   # stored pixel type (char/short/int/float/...)
+apply = AntsApplyTransforms(
+    3, "moving.nii.gz", "fixed.nii.gz", "resampled.nii.gz", interpolation="BSpline[3]", output_data_type="float"
+)  # stored pixel type (char/short/int/float/...)
 apply.add_transform("out_1Warp.nii.gz")
-apply.add_transform("out_0GenericAffine.mat")   # applied first (ANTs order)
+apply.add_transform("out_0GenericAffine.mat")  # applied first (ANTs order)
 apply.run()
 ```
 
@@ -301,11 +313,11 @@ two linear stages share index `0` and SyN is `1`. `reg.expected_transforms()`
 predicts these filenames and hands back ready-to-apply `-t` lists:
 
 ```python
-info = reg.expected_transforms()          # optionally pass cwd=... (where run() launches)
+info = reg.expected_transforms()  # optionally pass cwd=... (where run() launches)
 info["output_dir"]  # absolute folder the files land in
-info["files_abs"]   # the files as absolute paths
-info["forward"]     # ['reg_1Warp.nii.gz', 'reg_0GenericAffine.mat']  (moving -> fixed)
-info["inverse"]     # [('reg_0GenericAffine.mat', True), 'reg_1InverseWarp.nii.gz']
+info["files_abs"]  # the files as absolute paths
+info["forward"]  # ['reg_1Warp.nii.gz', 'reg_0GenericAffine.mat']  (moving -> fixed)
+info["inverse"]  # [('reg_0GenericAffine.mat', True), 'reg_1InverseWarp.nii.gz']
 ```
 
 The folder comes from your `output` prefix: a bare `"reg_"` lands in the working
@@ -321,12 +333,16 @@ Set `write_composite_transform=True` to get a single `reg_Composite.h5` /
 ```python
 from commandants import N4BiasFieldCorrection
 
-N4BiasFieldCorrection(3, "raw.nii.gz", "n4.nii.gz",
-                      bias_output="bias.nii.gz",
-                      shrink_factor=4,
-                      convergence_iterations=[50, 50, 50, 50],
-                      convergence_threshold=0.0,
-                      bspline_distance=200).run()
+N4BiasFieldCorrection(
+    3,
+    "raw.nii.gz",
+    "n4.nii.gz",
+    bias_output="bias.nii.gz",
+    shrink_factor=4,
+    convergence_iterations=[50, 50, 50, 50],
+    convergence_threshold=0.0,
+    bspline_distance=200,
+).run()
 ```
 
 ## elastix (benchmark against ANTs)
@@ -343,13 +359,12 @@ from commandants.core.executable import is_available
 # provision the binaries once (SimpleElastix doesn't ship the CLIs):
 #   commandants install-elastix
 reg = elastix.presets.affine("fixed.nii.gz", "moving.nii.gz", "out_dir")
-print(reg.to_shell())              # elastix -f ... -m ... -out out_dir -p <param0>
-result = reg.run(stream=True)      # writes out_dir/result.0.nii + TransformParameters.0.txt
-print(result.duration_seconds)     # wall-clock time, for benchmarking vs ANTs
+print(reg.to_shell())  # elastix -f ... -m ... -out out_dir -p <param0>
+result = reg.run(stream=True)  # writes out_dir/result.0.nii + TransformParameters.0.txt
+print(result.duration_seconds)  # wall-clock time, for benchmarking vs ANTs
 
 # apply the transform to another image:
-elastix.Transformix("out_dir/TransformParameters.0.txt", "warp_out",
-                    moving="other.nii.gz").run()
+elastix.Transformix("out_dir/TransformParameters.0.txt", "warp_out", moving="other.nii.gz").run()
 ```
 
 Parameter maps are fully editable (`elastix.ParameterMap` / `presets.parameter_map("rigid")`),

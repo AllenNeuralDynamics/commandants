@@ -12,7 +12,9 @@ from commandants.io import read_points, write_points
 
 def test_n4_full_command():
     n4 = N4BiasFieldCorrection(
-        3, "raw.nii.gz", "n4.nii.gz",
+        3,
+        "raw.nii.gz",
+        "n4.nii.gz",
         bias_output="bias.nii.gz",
         shrink_factor=4,
         convergence_iterations=[50, 50, 50, 50],
@@ -23,13 +25,20 @@ def test_n4_full_command():
     argv = n4.build_command()
     assert argv == [
         "N4BiasFieldCorrection",
-        "--image-dimensionality", "3",
-        "--input-image", "raw.nii.gz",
-        "--shrink-factor", "4",
-        "--convergence", "[50x50x50x50,0.0]",
-        "--bspline-fitting", "[200]",
-        "--output", "[n4.nii.gz,bias.nii.gz]",
-        "--verbose", "0",
+        "--image-dimensionality",
+        "3",
+        "--input-image",
+        "raw.nii.gz",
+        "--shrink-factor",
+        "4",
+        "--convergence",
+        "[50x50x50x50,0.0]",
+        "--bspline-fitting",
+        "[200]",
+        "--output",
+        "[n4.nii.gz,bias.nii.gz]",
+        "--verbose",
+        "0",
     ]
     assert n4.declared_outputs() == {"output": "n4.nii.gz", "bias_field": "bias.nii.gz"}
 
@@ -67,9 +76,7 @@ def test_resample_spacing():
 
 def test_resample_size_with_interpolation():
     r = ResampleImage(3, "in.nii", "out.nii", [128, 128, 64], interpret="size", interpolation=1)
-    assert r.build_command() == [
-        "ResampleImage", "3", "in.nii", "out.nii", "128x128x64", "1", "1"
-    ]
+    assert r.build_command() == ["ResampleImage", "3", "in.nii", "out.nii", "128x128x64", "1", "1"]
 
 
 def test_points_round_trip(tmp_path):

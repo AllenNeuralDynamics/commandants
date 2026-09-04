@@ -12,12 +12,12 @@ from __future__ import annotations
 import sys
 
 from commandants import (
+    CC,
+    MI,
     Affine,
     AntsApplyTransforms,
     AntsRegistration,
-    CC,
     Convergence,
-    MI,
     Rigid,
     SyN,
 )
@@ -103,13 +103,13 @@ The number is the transform's position in the (collapsed) stack, NOT the stage
 index -- that's why the two linear stages share index 0 and SyN is index 1.
 
 Predicted by reg.expected_transforms():
-  output_dir : {info['output_dir']}
+  output_dir : {info["output_dir"]}
                (a bare prefix like 'reg_' lands here, the working directory at
                 run time; ANTs will NOT create this folder -- make sure it exists.
                 Use output='/path/to/out/reg_' or reg.run(cwd=...) to place them.)
-  files      : {info['files']}
-  forward    : {info['forward']}   (moving -> fixed; feed straight to -t)
-  inverse    : {info['inverse']}   (fixed -> moving; affine is inverted)
+  files      : {info["files"]}
+  forward    : {info["forward"]}   (moving -> fixed; feed straight to -t)
+  inverse    : {info["inverse"]}   (fixed -> moving; affine is inverted)
 """
     )
 

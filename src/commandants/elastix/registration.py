@@ -13,8 +13,8 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
-from .parameters import ParameterMap
 from ._base import ElastixToolCommand
+from .parameters import ParameterMap
 
 PathLike = Union[str, Path]
 ParamLike = Union[ParameterMap, dict, str, Path]
@@ -86,9 +86,12 @@ class Elastix(ElastixToolCommand):
         if not self.param_maps:
             raise ValueError("elastix needs at least one parameter map (-p).")
         args: List[str] = [
-            "-f", self._resolve(self.fixed, "fixed"),
-            "-m", self._resolve(self.moving, "moving"),
-            "-out", str(self.out_dir),
+            "-f",
+            self._resolve(self.fixed, "fixed"),
+            "-m",
+            self._resolve(self.moving, "moving"),
+            "-out",
+            str(self.out_dir),
         ]
         for i, pm in enumerate(self.param_maps):
             args += ["-p", self._resolve_param(pm, f"param{i}")]

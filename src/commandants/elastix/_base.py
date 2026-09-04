@@ -70,9 +70,7 @@ class ElastixToolCommand(AntsCommand):
             return path
         return str(param)
 
-    def _prepare_execution(
-        self, env: Mapping[str, str] | None
-    ) -> Mapping[str, str] | None:
+    def _prepare_execution(self, env: Mapping[str, str] | None) -> Mapping[str, str] | None:
         os.makedirs(str(self.out_dir), exist_ok=True)
         return library_path_env(env, self.binary, self.ants_path)
 

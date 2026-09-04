@@ -11,7 +11,7 @@ an intensity metric combined with a point-set constraint).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Sequence
 
 from ..core.params import bracket, str_resolve, xjoin
@@ -73,19 +73,15 @@ class Stage:
         if not self.metrics:
             raise ValueError("A stage requires at least one metric.")
         if self.smoothing_units not in (None, "vox", "mm"):
-            raise ValueError(
-                f"smoothing_units must be 'vox', 'mm', or None; got {self.smoothing_units!r}"
-            )
+            raise ValueError(f"smoothing_units must be 'vox', 'mm', or None; got {self.smoothing_units!r}")
         n = self.convergence.n_levels
         if len(self.shrink_factors) != n:
             raise ValueError(
-                f"shrink_factors has {len(self.shrink_factors)} levels but convergence "
-                f"has {n}; they must match."
+                f"shrink_factors has {len(self.shrink_factors)} levels but convergence has {n}; they must match."
             )
         if len(self.smoothing_sigmas) != n:
             raise ValueError(
-                f"smoothing_sigmas has {len(self.smoothing_sigmas)} levels but convergence "
-                f"has {n}; they must match."
+                f"smoothing_sigmas has {len(self.smoothing_sigmas)} levels but convergence has {n}; they must match."
             )
 
     def _smoothing_arg(self) -> str:

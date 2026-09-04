@@ -13,17 +13,23 @@ def test_elastix_single_param_file():
     argv = reg.build_command()
     assert argv == [
         "elastix",
-        "-f", "fixed.nii",
-        "-m", "moving.nii",
-        "-out", "outdir",
-        "-p", "affine.txt",
-        "-threads", "4",
+        "-f",
+        "fixed.nii",
+        "-m",
+        "moving.nii",
+        "-out",
+        "outdir",
+        "-p",
+        "affine.txt",
+        "-threads",
+        "4",
     ]
 
 
 def test_elastix_masks_and_initial_transform():
-    reg = Elastix("f.nii", "m.nii", "out", "p.txt",
-                  fixed_mask="fm.nii", moving_mask="mm.nii", initial_transform="t0.txt")
+    reg = Elastix(
+        "f.nii", "m.nii", "out", "p.txt", fixed_mask="fm.nii", moving_mask="mm.nii", initial_transform="t0.txt"
+    )
     argv = reg.build_command()
     assert "-fMask" in argv and argv[argv.index("-fMask") + 1] == "fm.nii"
     assert "-mMask" in argv and argv[argv.index("-mMask") + 1] == "mm.nii"
@@ -71,9 +77,12 @@ def test_transformix_warp_image():
     argv = tx.build_command()
     assert argv == [
         "transformix",
-        "-tp", "TransformParameters.0.txt",
-        "-out", "tout",
-        "-in", "new.nii",
+        "-tp",
+        "TransformParameters.0.txt",
+        "-out",
+        "tout",
+        "-in",
+        "new.nii",
     ]
 
 

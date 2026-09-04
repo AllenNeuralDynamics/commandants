@@ -16,7 +16,7 @@ from __future__ import annotations
 import os
 import re
 from collections import OrderedDict
-from typing import Any, Iterable, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 PathLike = Union[str, "os.PathLike[str]"]
 

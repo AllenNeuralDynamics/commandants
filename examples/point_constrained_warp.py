@@ -10,11 +10,11 @@ that carries the point constraint.
 from __future__ import annotations
 
 from commandants import (
-    AntsRegistration,
     CC,
-    Convergence,
     MI,
     PSE,
+    AntsRegistration,
+    Convergence,
     Rigid,
     SyN,
 )
@@ -32,8 +32,7 @@ def build() -> AntsRegistration:
 
     reg.add_stage(
         transform=Rigid(gradient_step=0.1),
-        metrics=MI("fixed.nii.gz", "moving.nii.gz", weight=1.0, bins=32,
-                   sampling="Regular", sampling_pct=0.25),
+        metrics=MI("fixed.nii.gz", "moving.nii.gz", weight=1.0, bins=32, sampling="Regular", sampling_pct=0.25),
         convergence=Convergence([1000, 500, 250, 100], threshold=1e-6, window=10),
         shrink_factors=[8, 4, 2, 1],
         smoothing_sigmas=[3, 2, 1, 0],
@@ -44,8 +43,7 @@ def build() -> AntsRegistration:
         metrics=[
             CC("fixed.nii.gz", "moving.nii.gz", weight=1.0, radius=4),
             # The point-set constraint on the deformation:
-            PSE("fixed_points.csv", "moving_points.csv",
-                weight=0.5, point_set_sigma=1.0, sampling_pct=0.5),
+            PSE("fixed_points.csv", "moving_points.csv", weight=0.5, point_set_sigma=1.0, sampling_pct=0.5),
         ],
         convergence=Convergence([100, 70, 50, 20]),
         shrink_factors=[8, 4, 2, 1],

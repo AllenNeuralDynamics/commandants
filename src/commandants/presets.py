@@ -22,7 +22,7 @@ mutual information for the metric, light intensity winsorization.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Union
 
 from .registration import (
     CC,
@@ -70,9 +70,18 @@ def _make_metric(kind, fixed, moving, *, bins=32, radius=4, sampling="Regular", 
 
 
 def _new_reg(
-    dim, output, warped_output, inverse_warped_output, use_float, winsorize,
-    use_histogram_matching, collapse_output_transforms, write_composite_transform,
-    random_seed, verbose, ants_path,
+    dim,
+    output,
+    warped_output,
+    inverse_warped_output,
+    use_float,
+    winsorize,
+    use_histogram_matching,
+    collapse_output_transforms,
+    write_composite_transform,
+    random_seed,
+    verbose,
+    ants_path,
 ):
     return AntsRegistration(
         dimensionality=dim,
@@ -91,19 +100,50 @@ def _new_reg(
 
 
 def _linear_preset(
-    fixed, moving, output, transforms, *,
-    dim=3, warped_output=None, inverse_warped_output=None,
-    init="center-of-mass", initial_transform=None,
-    metric="mattes", bins=32, sampling="Regular", sampling_pct=_LINEAR_SAMPLING_PCT,
-    grad_step=_LINEAR_GRAD_STEP, iterations=_LINEAR_ITERATIONS, shrink_factors=_LINEAR_SHRINK,
-    smoothing_sigmas=_LINEAR_SMOOTH, smoothing_units="vox",
-    use_float=True, winsorize=(0.005, 0.995), use_histogram_matching=False,
-    mask=None, moving_mask=None, collapse_output_transforms=None,
-    write_composite_transform=False, random_seed=None, verbose=False, ants_path=None,
+    fixed,
+    moving,
+    output,
+    transforms,
+    *,
+    dim=3,
+    warped_output=None,
+    inverse_warped_output=None,
+    init="center-of-mass",
+    initial_transform=None,
+    metric="mattes",
+    bins=32,
+    sampling="Regular",
+    sampling_pct=_LINEAR_SAMPLING_PCT,
+    grad_step=_LINEAR_GRAD_STEP,
+    iterations=_LINEAR_ITERATIONS,
+    shrink_factors=_LINEAR_SHRINK,
+    smoothing_sigmas=_LINEAR_SMOOTH,
+    smoothing_units="vox",
+    use_float=True,
+    winsorize=(0.005, 0.995),
+    use_histogram_matching=False,
+    mask=None,
+    moving_mask=None,
+    collapse_output_transforms=None,
+    write_composite_transform=False,
+    random_seed=None,
+    verbose=False,
+    ants_path=None,
 ) -> AntsRegistration:
-    reg = _new_reg(dim, output, warped_output, inverse_warped_output, use_float, winsorize,
-                   use_histogram_matching, collapse_output_transforms, write_composite_transform,
-                   random_seed, verbose, ants_path)
+    reg = _new_reg(
+        dim,
+        output,
+        warped_output,
+        inverse_warped_output,
+        use_float,
+        winsorize,
+        use_histogram_matching,
+        collapse_output_transforms,
+        write_composite_transform,
+        random_seed,
+        verbose,
+        ants_path,
+    )
     # An explicit initial transform takes precedence over center-of-mass init.
     if initial_transform is not None:
         reg.add_initial_moving_transform(initial_transform)
@@ -144,26 +184,63 @@ def affine(fixed, moving, output, **kwargs) -> AntsRegistration:
 
 
 def syn(
-    fixed, moving, output, *,
-    dim=3, warped_output=None, inverse_warped_output=None,
-    init="center-of-mass", initial_transform=None,
+    fixed,
+    moving,
+    output,
+    *,
+    dim=3,
+    warped_output=None,
+    inverse_warped_output=None,
+    init="center-of-mass",
+    initial_transform=None,
     # linear part (Rigid + Affine)
-    aff_metric="mattes", aff_bins=32, aff_sampling="Regular", aff_sampling_pct=_LINEAR_SAMPLING_PCT,
-    aff_grad_step=_LINEAR_GRAD_STEP, aff_iterations=_LINEAR_ITERATIONS, aff_shrink_factors=_LINEAR_SHRINK,
+    aff_metric="mattes",
+    aff_bins=32,
+    aff_sampling="Regular",
+    aff_sampling_pct=_LINEAR_SAMPLING_PCT,
+    aff_grad_step=_LINEAR_GRAD_STEP,
+    aff_iterations=_LINEAR_ITERATIONS,
+    aff_shrink_factors=_LINEAR_SHRINK,
     aff_smoothing_sigmas=_LINEAR_SMOOTH,
     # SyN part
-    syn_metric="mattes", syn_bins=32, syn_radius=4, syn_sampling=None, syn_sampling_pct=None,
-    grad_step=0.1, flow_sigma=3.0, total_sigma=0.0,
-    syn_iterations=_SYN_ITERATIONS, syn_shrink_factors=_SYN_SHRINK, syn_smoothing_sigmas=_SYN_SMOOTH,
+    syn_metric="mattes",
+    syn_bins=32,
+    syn_radius=4,
+    syn_sampling=None,
+    syn_sampling_pct=None,
+    grad_step=0.1,
+    flow_sigma=3.0,
+    total_sigma=0.0,
+    syn_iterations=_SYN_ITERATIONS,
+    syn_shrink_factors=_SYN_SHRINK,
+    syn_smoothing_sigmas=_SYN_SMOOTH,
     smoothing_units="vox",
-    use_float=True, winsorize=(0.005, 0.995), use_histogram_matching=False,
-    mask=None, moving_mask=None, collapse_output_transforms=None,
-    write_composite_transform=False, random_seed=None, verbose=False, ants_path=None,
+    use_float=True,
+    winsorize=(0.005, 0.995),
+    use_histogram_matching=False,
+    mask=None,
+    moving_mask=None,
+    collapse_output_transforms=None,
+    write_composite_transform=False,
+    random_seed=None,
+    verbose=False,
+    ants_path=None,
 ) -> AntsRegistration:
     """Full pipeline: init + Rigid + Affine + SyN (== antsRegistrationSyN / ANTsPyX SyNRA)."""
-    reg = _new_reg(dim, output, warped_output, inverse_warped_output, use_float, winsorize,
-                   use_histogram_matching, collapse_output_transforms, write_composite_transform,
-                   random_seed, verbose, ants_path)
+    reg = _new_reg(
+        dim,
+        output,
+        warped_output,
+        inverse_warped_output,
+        use_float,
+        winsorize,
+        use_histogram_matching,
+        collapse_output_transforms,
+        write_composite_transform,
+        random_seed,
+        verbose,
+        ants_path,
+    )
     if initial_transform is not None:
         reg.add_initial_moving_transform(initial_transform)
     elif init is not None:
@@ -173,30 +250,66 @@ def syn(
     for transform_cls in (Rigid, Affine):
         reg.add_stage(
             transform=transform_cls(gradient_step=aff_grad_step),
-            metrics=_make_metric(aff_metric, fixed, moving, bins=aff_bins,
-                                  sampling=aff_sampling, sampling_pct=aff_sampling_pct),
+            metrics=_make_metric(
+                aff_metric, fixed, moving, bins=aff_bins, sampling=aff_sampling, sampling_pct=aff_sampling_pct
+            ),
             convergence=Convergence(aff_iterations),
             shrink_factors=list(aff_shrink_factors),
             smoothing_sigmas=list(aff_smoothing_sigmas),
             smoothing_units=smoothing_units,
         )
-    _add_syn_stage(reg, fixed, moving, syn_metric, syn_bins, syn_radius, syn_sampling,
-                   syn_sampling_pct, grad_step, flow_sigma, total_sigma, syn_iterations,
-                   syn_shrink_factors, syn_smoothing_sigmas, smoothing_units)
+    _add_syn_stage(
+        reg,
+        fixed,
+        moving,
+        syn_metric,
+        syn_bins,
+        syn_radius,
+        syn_sampling,
+        syn_sampling_pct,
+        grad_step,
+        flow_sigma,
+        total_sigma,
+        syn_iterations,
+        syn_shrink_factors,
+        syn_smoothing_sigmas,
+        smoothing_units,
+    )
     return reg
 
 
 def syn_only(
-    fixed, moving, output, *,
-    dim=3, warped_output=None, inverse_warped_output=None,
-    init=None, initial_transform=None,
-    syn_metric="mattes", syn_bins=32, syn_radius=4, syn_sampling=None, syn_sampling_pct=None,
-    grad_step=0.1, flow_sigma=3.0, total_sigma=0.0,
-    syn_iterations=_SYN_ITERATIONS, syn_shrink_factors=_SYN_SHRINK, syn_smoothing_sigmas=_SYN_SMOOTH,
+    fixed,
+    moving,
+    output,
+    *,
+    dim=3,
+    warped_output=None,
+    inverse_warped_output=None,
+    init=None,
+    initial_transform=None,
+    syn_metric="mattes",
+    syn_bins=32,
+    syn_radius=4,
+    syn_sampling=None,
+    syn_sampling_pct=None,
+    grad_step=0.1,
+    flow_sigma=3.0,
+    total_sigma=0.0,
+    syn_iterations=_SYN_ITERATIONS,
+    syn_shrink_factors=_SYN_SHRINK,
+    syn_smoothing_sigmas=_SYN_SMOOTH,
     smoothing_units="vox",
-    use_float=True, winsorize=(0.005, 0.995), use_histogram_matching=False,
-    mask=None, moving_mask=None, collapse_output_transforms=None,
-    write_composite_transform=False, random_seed=None, verbose=False, ants_path=None,
+    use_float=True,
+    winsorize=(0.005, 0.995),
+    use_histogram_matching=False,
+    mask=None,
+    moving_mask=None,
+    collapse_output_transforms=None,
+    write_composite_transform=False,
+    random_seed=None,
+    verbose=False,
+    ants_path=None,
 ) -> AntsRegistration:
     """SyN only -- no linear stages.
 
@@ -205,29 +318,68 @@ def syn_only(
     first). Pass ``initial_transform=<path>`` to prepend an existing linear
     transform, or ``init="center-of-mass"`` to align centers first.
     """
-    reg = _new_reg(dim, output, warped_output, inverse_warped_output, use_float, winsorize,
-                   use_histogram_matching, collapse_output_transforms, write_composite_transform,
-                   random_seed, verbose, ants_path)
+    reg = _new_reg(
+        dim,
+        output,
+        warped_output,
+        inverse_warped_output,
+        use_float,
+        winsorize,
+        use_histogram_matching,
+        collapse_output_transforms,
+        write_composite_transform,
+        random_seed,
+        verbose,
+        ants_path,
+    )
     if initial_transform is not None:
         reg.add_initial_moving_transform(initial_transform)
     if init is not None:
         reg.initialize_from_images(fixed, moving, init=init)
     if mask is not None or moving_mask is not None:
         reg.set_masks(mask, moving_mask)
-    _add_syn_stage(reg, fixed, moving, syn_metric, syn_bins, syn_radius, syn_sampling,
-                   syn_sampling_pct, grad_step, flow_sigma, total_sigma, syn_iterations,
-                   syn_shrink_factors, syn_smoothing_sigmas, smoothing_units)
+    _add_syn_stage(
+        reg,
+        fixed,
+        moving,
+        syn_metric,
+        syn_bins,
+        syn_radius,
+        syn_sampling,
+        syn_sampling_pct,
+        grad_step,
+        flow_sigma,
+        total_sigma,
+        syn_iterations,
+        syn_shrink_factors,
+        syn_smoothing_sigmas,
+        smoothing_units,
+    )
     return reg
 
 
-def _add_syn_stage(reg, fixed, moving, metric, bins, radius, sampling, sampling_pct,
-                   grad_step, flow_sigma, total_sigma, iterations, shrink_factors,
-                   smoothing_sigmas, smoothing_units):
+def _add_syn_stage(
+    reg,
+    fixed,
+    moving,
+    metric,
+    bins,
+    radius,
+    sampling,
+    sampling_pct,
+    grad_step,
+    flow_sigma,
+    total_sigma,
+    iterations,
+    shrink_factors,
+    smoothing_sigmas,
+    smoothing_units,
+):
     reg.add_stage(
-        transform=SyN(gradient_step=grad_step, update_field_variance=flow_sigma,
-                      total_field_variance=total_sigma),
-        metrics=_make_metric(metric, fixed, moving, bins=bins, radius=radius,
-                             sampling=sampling, sampling_pct=sampling_pct),
+        transform=SyN(gradient_step=grad_step, update_field_variance=flow_sigma, total_field_variance=total_sigma),
+        metrics=_make_metric(
+            metric, fixed, moving, bins=bins, radius=radius, sampling=sampling, sampling_pct=sampling_pct
+        ),
         convergence=Convergence(iterations),
         shrink_factors=list(shrink_factors),
         smoothing_sigmas=list(smoothing_sigmas),

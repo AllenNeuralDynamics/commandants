@@ -28,9 +28,7 @@ def _image_type_code(value: Union[int, str]) -> int:
         return value
     key = value.lower()
     if key not in _IMAGE_TYPES:
-        raise ValueError(
-            f"image_type must be one of {sorted(_IMAGE_TYPES)} or 0-3; got {value!r}"
-        )
+        raise ValueError(f"image_type must be one of {sorted(_IMAGE_TYPES)} or 0-3; got {value!r}")
     return _IMAGE_TYPES[key]
 
 
@@ -75,17 +73,12 @@ class AntsApplyTransforms(AntsCommand):
         self.default_value = default_value
         self.use_float = use_float
         if output_data_type is not None and output_data_type not in _OUTPUT_DATA_TYPES:
-            raise ValueError(
-                f"output_data_type must be one of {sorted(_OUTPUT_DATA_TYPES)}; "
-                f"got {output_data_type!r}"
-            )
+            raise ValueError(f"output_data_type must be one of {sorted(_OUTPUT_DATA_TYPES)}; got {output_data_type!r}")
         self.output_data_type = output_data_type
         self.verbose = verbose
         self._transforms: List[Tuple[PathLike, bool]] = []
 
-    def add_transform(
-        self, transform: PathLike, invert: bool = False
-    ) -> "AntsApplyTransforms":
+    def add_transform(self, transform: PathLike, invert: bool = False) -> "AntsApplyTransforms":
         """Append a transform to the list (optionally inverted)."""
         self._transforms.append((transform, invert))
         return self
@@ -154,9 +147,7 @@ class AntsApplyTransformsToPoints(AntsCommand):
         self.precision = precision
         self._transforms: List[Tuple[PathLike, bool]] = []
 
-    def add_transform(
-        self, transform: PathLike, invert: bool = False
-    ) -> "AntsApplyTransformsToPoints":
+    def add_transform(self, transform: PathLike, invert: bool = False) -> "AntsApplyTransformsToPoints":
         """Append a transform to the list (optionally inverted)."""
         self._transforms.append((transform, invert))
         return self

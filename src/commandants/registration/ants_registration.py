@@ -121,18 +121,14 @@ class AntsRegistration(AntsCommand):
         """
         if isinstance(init, str):
             if init not in _INIT_FEATURES:
-                raise ValueError(
-                    f"init must be one of {sorted(_INIT_FEATURES)} or an int; got {init!r}"
-                )
+                raise ValueError(f"init must be one of {sorted(_INIT_FEATURES)} or an int; got {init!r}")
             feature = _INIT_FEATURES[init]
         else:
             feature = int(init)
         self._initial_transforms.append(("images", fixed, moving, feature))
         return self
 
-    def add_initial_moving_transform(
-        self, transform: PathLike, use_inverse: bool = False
-    ) -> "AntsRegistration":
+    def add_initial_moving_transform(self, transform: PathLike, use_inverse: bool = False) -> "AntsRegistration":
         """Prepend an existing transform file as the initial moving transform."""
         self._initial_transforms.append(("file", transform, use_inverse))
         return self
@@ -259,9 +255,7 @@ class AntsRegistration(AntsCommand):
         # Masks: ANTs takes either one global --masks (all stages) or one per
         # stage in order (with [NA,NA] for unmasked stages). Use per-stage
         # emission if any stage defines its own mask; otherwise a single global.
-        per_stage_masks = any(
-            (s.fixed_mask is not None or s.moving_mask is not None) for s in self.stages
-        )
+        per_stage_masks = any((s.fixed_mask is not None or s.moving_mask is not None) for s in self.stages)
         global_masks = self._fixed_mask is not None or self._moving_mask is not None
 
         if global_masks and not per_stage_masks:
@@ -347,11 +341,7 @@ class AntsRegistration(AntsCommand):
             inv = f"{prefix}InverseComposite.h5"
             result.update(files=[comp, inv], forward=[comp], inverse=[inv])
         else:
-            collapse = (
-                True
-                if self.collapse_output_transforms is None
-                else self.collapse_output_transforms
-            )
+            collapse = True if self.collapse_output_transforms is None else self.collapse_output_transforms
             # Reduce stages to ordered output "units": collapsed-linear or warp.
             units: list[str] = []
             if collapse:
@@ -359,18 +349,13 @@ class AntsRegistration(AntsCommand):
                 while j < len(self.stages):
                     if isinstance(self.stages[j].transform, linear):
                         units.append("affine")
-                        while j < len(self.stages) and isinstance(
-                            self.stages[j].transform, linear
-                        ):
+                        while j < len(self.stages) and isinstance(self.stages[j].transform, linear):
                             j += 1
                     else:
                         units.append("warp")
                         j += 1
             else:
-                units = [
-                    "affine" if isinstance(s.transform, linear) else "warp"
-                    for s in self.stages
-                ]
+                units = ["affine" if isinstance(s.transform, linear) else "warp" for s in self.stages]
 
             named: list[tuple] = []
             files: list[str] = []
@@ -401,12 +386,8 @@ class AntsRegistration(AntsCommand):
         # Resolve the folder the files will actually land in.
         root = os.path.abspath(str(cwd)) if cwd is not None else os.getcwd()
         prefix_dir = os.path.dirname(prefix)
-        result["output_dir"] = (
-            os.path.abspath(os.path.join(root, prefix_dir)) if prefix_dir else root
-        )
-        result["files_abs"] = [
-            os.path.abspath(os.path.join(root, f)) for f in result["files"]
-        ]
+        result["output_dir"] = os.path.abspath(os.path.join(root, prefix_dir)) if prefix_dir else root
+        result["files_abs"] = [os.path.abspath(os.path.join(root, f)) for f in result["files"]]
         return result
 
     def declared_outputs(self) -> dict:

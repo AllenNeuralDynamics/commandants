@@ -32,75 +32,118 @@ _MEMORY_TIPS = [
 
 # signal number -> (name, summary, likely_causes, suggestions)
 _SIGNALS = {
-    1: ("SIGHUP", "Hangup -- the controlling terminal closed.",
+    1: (
+        "SIGHUP",
+        "Hangup -- the controlling terminal closed.",
         ["The terminal/session that launched ANTs exited."],
-        ["Run under `nohup`, `tmux`/`screen`, or as a proper batch job."]),
-    2: ("SIGINT", "Interrupted (Ctrl-C).",
-        ["You (or a parent process) pressed Ctrl-C."], []),
-    4: ("SIGILL", "Illegal CPU instruction.",
-        ["The binary was built for a newer instruction set (e.g. AVX/AVX-512) "
-         "than this CPU supports -- common with prebuilt binaries on older/VM CPUs."],
-        ["If you used `commandants install-ants`, the prebuilt build may target a "
-         "newer CPU; try a different release asset or build ANTs locally.",
-         "Check `/proc/cpuinfo` flags against the build's requirements."]),
-    6: ("SIGABRT", "Aborted -- an uncaught C++ exception or failed assertion.",
+        ["Run under `nohup`, `tmux`/`screen`, or as a proper batch job."],
+    ),
+    2: ("SIGINT", "Interrupted (Ctrl-C).", ["You (or a parent process) pressed Ctrl-C."], []),
+    4: (
+        "SIGILL",
+        "Illegal CPU instruction.",
+        [
+            "The binary was built for a newer instruction set (e.g. AVX/AVX-512) "
+            "than this CPU supports -- common with prebuilt binaries on older/VM CPUs."
+        ],
+        [
+            "If you used `commandants install-ants`, the prebuilt build may target a "
+            "newer CPU; try a different release asset or build ANTs locally.",
+            "Check `/proc/cpuinfo` flags against the build's requirements.",
+        ],
+    ),
+    6: (
+        "SIGABRT",
+        "Aborted -- an uncaught C++ exception or failed assertion.",
         ["std::bad_alloc (out of memory!)", "an ITK exception", "an assertion failure"],
-        ["Read stderr for the ITK/`terminate called after throwing` message.",
-         "If it mentions bad_alloc/allocate, treat it as OUT OF MEMORY (see below)."]
-        + _MEMORY_TIPS),
-    7: ("SIGBUS", "Bus error -- bad memory or file access.",
-        ["A truncated/corrupt input image", "a memory-mapped file on a flaky/full "
-         "network or disk"],
-        ["Verify the input files open cleanly and the disk isn't full."]),
-    8: ("SIGFPE", "Arithmetic exception (e.g. divide-by-zero).",
+        [
+            "Read stderr for the ITK/`terminate called after throwing` message.",
+            "If it mentions bad_alloc/allocate, treat it as OUT OF MEMORY (see below).",
+        ]
+        + _MEMORY_TIPS,
+    ),
+    7: (
+        "SIGBUS",
+        "Bus error -- bad memory or file access.",
+        ["A truncated/corrupt input image", "a memory-mapped file on a flaky/full network or disk"],
+        ["Verify the input files open cleanly and the disk isn't full."],
+    ),
+    8: (
+        "SIGFPE",
+        "Arithmetic exception (e.g. divide-by-zero).",
         ["Degenerate image geometry (zero spacing) or all-constant/empty inputs."],
-        ["Check the image headers (spacing/direction) and that inputs aren't empty."]),
-    9: ("SIGKILL", "Forcibly killed -- this signal cannot be caught or handled.",
-        ["The OS out-of-memory (OOM) killer reclaimed memory (most common)",
-         "a cluster/cgroup memory limit was exceeded (SLURM, Docker --memory, k8s)",
-         "a wall-clock/time limit, or a manual `kill -9`"],
-        ["This is almost always OUT OF MEMORY."] + _MEMORY_TIPS),
-    11: ("SIGSEGV", "Segmentation fault -- invalid memory access.",
-         ["A corrupt or malformed input image", "an incompatible ANTs/ITK build",
-          "an ANTs bug on this input"],
-         ["Confirm inputs open in SimpleITK/ITK-SNAP and have sane headers.",
-          "Try a different ANTs version; minimize to a small reproducer."]),
-    13: ("SIGPIPE", "Broken pipe.",
-         ["A downstream process reading ANTs' output closed early."], []),
-    15: ("SIGTERM", "Terminated -- a graceful kill request.",
-         ["A scheduler hit a time/resource limit", "someone/something ran `kill`"],
-         ["Check scheduler logs for a time or memory limit; raise the limit."]),
-    24: ("SIGXCPU", "CPU time limit exceeded.",
-         ["A scheduler/ulimit CPU-time cap was hit."],
-         ["Raise the CPU-time limit or speed up the job (fewer iterations/levels)."]),
-    25: ("SIGXFSZ", "File size limit exceeded.",
-         ["An output exceeded a filesystem/ulimit file-size cap."],
-         ["Raise the file-size limit; check free disk space."]),
+        ["Check the image headers (spacing/direction) and that inputs aren't empty."],
+    ),
+    9: (
+        "SIGKILL",
+        "Forcibly killed -- this signal cannot be caught or handled.",
+        [
+            "The OS out-of-memory (OOM) killer reclaimed memory (most common)",
+            "a cluster/cgroup memory limit was exceeded (SLURM, Docker --memory, k8s)",
+            "a wall-clock/time limit, or a manual `kill -9`",
+        ],
+        ["This is almost always OUT OF MEMORY."] + _MEMORY_TIPS,
+    ),
+    11: (
+        "SIGSEGV",
+        "Segmentation fault -- invalid memory access.",
+        ["A corrupt or malformed input image", "an incompatible ANTs/ITK build", "an ANTs bug on this input"],
+        [
+            "Confirm inputs open in SimpleITK/ITK-SNAP and have sane headers.",
+            "Try a different ANTs version; minimize to a small reproducer.",
+        ],
+    ),
+    13: ("SIGPIPE", "Broken pipe.", ["A downstream process reading ANTs' output closed early."], []),
+    15: (
+        "SIGTERM",
+        "Terminated -- a graceful kill request.",
+        ["A scheduler hit a time/resource limit", "someone/something ran `kill`"],
+        ["Check scheduler logs for a time or memory limit; raise the limit."],
+    ),
+    24: (
+        "SIGXCPU",
+        "CPU time limit exceeded.",
+        ["A scheduler/ulimit CPU-time cap was hit."],
+        ["Raise the CPU-time limit or speed up the job (fewer iterations/levels)."],
+    ),
+    25: (
+        "SIGXFSZ",
+        "File size limit exceeded.",
+        ["An output exceeded a filesystem/ulimit file-size cap."],
+        ["Raise the file-size limit; check free disk space."],
+    ),
 }
 
 # NTSTATUS (Windows) unsigned value -> (name, summary, causes, suggestions)
 _WINDOWS = {
-    0xC0000005: ("STATUS_ACCESS_VIOLATION",
-                 "Access violation -- invalid memory access (the Windows analogue "
-                 "of a segfault).",
-                 ["A corrupt/malformed input image", "an incompatible build", "a bug"],
-                 ["Verify inputs open in SimpleITK/ITK-SNAP; try another ANTs build."]),
-    0xC00000FD: ("STATUS_STACK_OVERFLOW", "Stack overflow.",
-                 ["Runaway recursion or an extreme input."], []),
-    0xC0000017: ("STATUS_NO_MEMORY", "Out of memory.",
-                 ["The process could not allocate memory."], _MEMORY_TIPS),
-    0xC000013A: ("STATUS_CONTROL_C_EXIT", "Terminated by Ctrl-C.",
-                 ["The console received Ctrl-C."], []),
-    0xC000001D: ("STATUS_ILLEGAL_INSTRUCTION",
-                 "Illegal instruction -- possibly a CPU-mismatch build.",
-                 ["The binary targets instructions this CPU lacks."],
-                 ["Try a different ANTs build for your CPU."]),
-    0xC0000094: ("STATUS_INTEGER_DIVIDE_BY_ZERO", "Integer divide by zero.",
-                 ["Degenerate geometry or empty inputs."], []),
-    0xC0000374: ("STATUS_HEAP_CORRUPTION", "Heap corruption.",
-                 ["A memory bug or incompatible libraries."], []),
-    0xC0000409: ("STATUS_STACK_BUFFER_OVERRUN", "Security check / buffer overrun.",
-                 ["A memory-safety check failed."], []),
+    0xC0000005: (
+        "STATUS_ACCESS_VIOLATION",
+        "Access violation -- invalid memory access (the Windows analogue of a segfault).",
+        ["A corrupt/malformed input image", "an incompatible build", "a bug"],
+        ["Verify inputs open in SimpleITK/ITK-SNAP; try another ANTs build."],
+    ),
+    0xC00000FD: ("STATUS_STACK_OVERFLOW", "Stack overflow.", ["Runaway recursion or an extreme input."], []),
+    0xC0000017: ("STATUS_NO_MEMORY", "Out of memory.", ["The process could not allocate memory."], _MEMORY_TIPS),
+    0xC000013A: ("STATUS_CONTROL_C_EXIT", "Terminated by Ctrl-C.", ["The console received Ctrl-C."], []),
+    0xC000001D: (
+        "STATUS_ILLEGAL_INSTRUCTION",
+        "Illegal instruction -- possibly a CPU-mismatch build.",
+        ["The binary targets instructions this CPU lacks."],
+        ["Try a different ANTs build for your CPU."],
+    ),
+    0xC0000094: (
+        "STATUS_INTEGER_DIVIDE_BY_ZERO",
+        "Integer divide by zero.",
+        ["Degenerate geometry or empty inputs."],
+        [],
+    ),
+    0xC0000374: ("STATUS_HEAP_CORRUPTION", "Heap corruption.", ["A memory bug or incompatible libraries."], []),
+    0xC0000409: (
+        "STATUS_STACK_BUFFER_OVERRUN",
+        "Security check / buffer overrun.",
+        ["A memory-safety check failed."],
+        [],
+    ),
 }
 
 
@@ -171,7 +214,9 @@ def explain_exit_code(code: int, system: Optional[str] = None) -> ExitCodeExplan
 
     if code == 0:
         return ExitCodeExplanation(
-            code=0, category="success", name="EXIT_SUCCESS",
+            code=0,
+            category="success",
+            name="EXIT_SUCCESS",
             summary="Success -- ANTs completed normally.",
         )
 
@@ -191,7 +236,9 @@ def explain_exit_code(code: int, system: Optional[str] = None) -> ExitCodeExplan
 
     if code == 1:
         return ExitCodeExplanation(
-            code=1, category="failure", name="EXIT_FAILURE",
+            code=1,
+            category="failure",
+            name="EXIT_FAILURE",
             summary="Generic failure -- ANTs raised an error and exited.",
             likely_causes=[
                 "An ITK exception (bad/missing input, header/dimension mismatch)",
@@ -199,23 +246,25 @@ def explain_exit_code(code: int, system: Optional[str] = None) -> ExitCodeExplan
             ],
             suggestions=[
                 "Read stderr -- ANTs prints the actual error there.",
-                "Re-run with verbose=True and check the assembled command "
-                "(reg.to_shell()).",
+                "Re-run with verbose=True and check the assembled command (reg.to_shell()).",
             ],
         )
     if code == 2:
         return ExitCodeExplanation(
-            code=2, category="usage", name="usage/argument error",
+            code=2,
+            category="usage",
+            name="usage/argument error",
             summary="Usually an argument or usage error.",
             likely_causes=["Malformed/missing arguments."],
             suggestions=["Inspect reg.to_shell(); check flags and file paths."],
         )
 
     return ExitCodeExplanation(
-        code=code, category="unknown", name=f"exit {code}",
+        code=code,
+        category="unknown",
+        name=f"exit {code}",
         summary=f"Undocumented exit code {code}.",
-        likely_causes=["ANTs does not define a numbered error-code table beyond "
-                       "0 (success) / 1 (failure)."],
+        likely_causes=["ANTs does not define a numbered error-code table beyond 0 (success) / 1 (failure)."],
         suggestions=["Read stderr for the underlying message."],
     )
 

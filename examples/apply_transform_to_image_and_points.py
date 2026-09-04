@@ -29,14 +29,14 @@ from commandants.io import read_points, write_points
 # --- what you fitted earlier -------------------------------------------------
 # A SyN registration (moving -> fixed) with prefix "reg_" produced these.
 # For a rigid/affine-only fit you'd have ONLY the .mat (see the note below).
-FIXED = "fixed.nii.gz"                       # reference grid for the output image
+FIXED = "fixed.nii.gz"  # reference grid for the output image
 AFFINE = "reg_0GenericAffine.mat"
 WARP = "reg_1Warp.nii.gz"
 INVERSE_WARP = "reg_1InverseWarp.nii.gz"
 
 # The new data you want to move (both live in the MOVING image's space):
-NEW_IMAGE = "new_moving_channel.nii.gz"       # e.g. another channel/modality
-POINTS_IN = "points_moving.csv"               # points in the moving image's space
+NEW_IMAGE = "new_moving_channel.nii.gz"  # e.g. another channel/modality
+POINTS_IN = "points_moving.csv"  # points in the moving image's space
 POINTS_OUT = "points_in_fixed.csv"
 IMAGE_OUT = "new_in_fixed.nii.gz"
 
@@ -48,11 +48,14 @@ def main() -> None:
     #     -t list right-to-left, so the affine is applied to the grid first).
     # ------------------------------------------------------------------ #
     apply_img = AntsApplyTransforms(
-        3, NEW_IMAGE, FIXED, IMAGE_OUT,
-        interpolation="Linear",   # use "genericLabel" instead for a label image
+        3,
+        NEW_IMAGE,
+        FIXED,
+        IMAGE_OUT,
+        interpolation="Linear",  # use "genericLabel" instead for a label image
     )
-    apply_img.add_transform(WARP)      # forward warp
-    apply_img.add_transform(AFFINE)    # forward affine (applied first)
+    apply_img.add_transform(WARP)  # forward warp
+    apply_img.add_transform(AFFINE)  # forward affine (applied first)
     print("=" * 70, "\n(1) Image  moving -> fixed  (FORWARD transforms)\n", "=" * 70, sep="")
     print(apply_img.to_shell())
 
@@ -66,8 +69,8 @@ def main() -> None:
         write_points(POINTS_IN, [[10.0, 12.0, 8.0], [4.5, 7.0, 15.0]], labels=[1, 2])
 
     apply_pts = AntsApplyTransformsToPoints(3, POINTS_IN, POINTS_OUT)
-    apply_pts.add_transform(AFFINE, invert=True)   # inverse affine
-    apply_pts.add_transform(INVERSE_WARP)          # inverse warp (applied first)
+    apply_pts.add_transform(AFFINE, invert=True)  # inverse affine
+    apply_pts.add_transform(INVERSE_WARP)  # inverse warp (applied first)
     print("\n" + "=" * 70, "\n(2) Points moving -> fixed  (INVERSE transforms)\n", "=" * 70, sep="")
     print(apply_pts.to_shell())
 

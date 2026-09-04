@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from commandants.elastix import ParameterMap
-from commandants.elastix import presets
+from commandants.elastix import ParameterMap, presets
 
 
 def test_value_formatting():
     pm = ParameterMap()
-    pm.set("Transform", "EulerTransform")     # string -> quoted
-    pm.set("NumberOfResolutions", 4)          # int -> bare
-    pm.set("WriteResultImage", True)          # bool -> "true"
-    pm.set("Foo", False)                      # bool -> "false"
-    pm.set("Schedule", 8, 4, 2, 1)            # sequence -> space-joined
+    pm.set("Transform", "EulerTransform")  # string -> quoted
+    pm.set("NumberOfResolutions", 4)  # int -> bare
+    pm.set("WriteResultImage", True)  # bool -> "true"
+    pm.set("Foo", False)  # bool -> "false"
+    pm.set("Schedule", 8, 4, 2, 1)  # sequence -> space-joined
     text = pm.to_text()
     assert '(Transform "EulerTransform")' in text
     assert "(NumberOfResolutions 4)" in text

@@ -42,6 +42,22 @@ Changelog = "https://github.com/AllenNeuralDynamics/commandants/blob/main/CHANGE
 [tool.hatch.build.targets.wheel]
 packages = ["src/commandants"]
 
+[dependency-groups]
+# Installed by `uv sync` (used by the galen-uv CI). Tooling + test-time image libs
+# so the SimpleITK-backed tests actually run in CI instead of importorskip-ing.
+dev = ["pytest>=7.0", "pytest-cov", "ruff", "SimpleITK>=2.2", "numpy>=1.21"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["scratch"]
+
+[tool.ruff.lint]
+# Pragmatic bar: pyflakes (F) + pycodestyle (E/W) + import sorting (I). Docstring (D),
+# annotation (ANN), and pyupgrade (UP) enforcement are deferred for now, mirroring the
+# deliberate `run-mypy: false` stance in ci-call.yml (commandants isn't held to that bar yet).
+select = ["E", "F", "W", "I"]
+
 [tool.commitizen]
 version_provider = "pep621"
 version_files = ["src/commandants/__init__.py:__version__"]

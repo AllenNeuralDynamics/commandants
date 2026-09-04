@@ -19,6 +19,7 @@ Quickstart
 
 from __future__ import annotations
 
+from . import elastix, presets
 from .core import (
     AntsCommand,
     AntsNotFoundError,
@@ -39,16 +40,14 @@ from .install import (
     uninstall_ants,
     uninstall_elastix,
 )
-from . import elastix
-from . import presets
 from .io import TempWorkspace, is_sitk_image, read_points, write_points
-from .presets import affine, rigid, similarity, syn, syn_only, synonly, translation
 from .preprocessing import (
     ImageMath,
     N4BiasFieldCorrection,
     ResampleImage,
     ThresholdImage,
 )
+from .presets import affine, rigid, similarity, syn, syn_only, synonly, translation
 from .registration import (
     CC,
     GC,

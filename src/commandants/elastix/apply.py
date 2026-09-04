@@ -12,8 +12,8 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
-from .parameters import ParameterMap
 from ._base import ElastixToolCommand
+from .parameters import ParameterMap
 
 PathLike = Union[str, Path]
 ParamLike = Union[ParameterMap, dict, str, Path]
@@ -64,8 +64,7 @@ class Transformix(ElastixToolCommand):
             raise ValueError("Pass either points or deformation_field, not both (one -def).")
         if moving is None and points is None and not deformation_field and not jacobian:
             raise ValueError(
-                "transformix needs something to do: set moving=, points=, "
-                "deformation_field=True, or jacobian=True."
+                "transformix needs something to do: set moving=, points=, deformation_field=True, or jacobian=True."
             )
         self.transform_parameters = transform_parameters
         self.out_dir = out_dir
@@ -77,8 +76,10 @@ class Transformix(ElastixToolCommand):
 
     def _build_args(self) -> List[str]:
         args: List[str] = [
-            "-tp", self._resolve_param(self.transform_parameters, "tp"),
-            "-out", str(self.out_dir),
+            "-tp",
+            self._resolve_param(self.transform_parameters, "tp"),
+            "-out",
+            str(self.out_dir),
         ]
         if self.moving is not None:
             args += ["-in", self._resolve(self.moving, "input")]

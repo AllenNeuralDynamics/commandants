@@ -26,19 +26,20 @@ from commandants.core.executable import is_available
 
 def _blob(shift: int = 0) -> sitk.Image:
     a = np.zeros((64, 64, 64), np.float32)
-    a[16 + shift:40 + shift, 16 + shift:40 + shift, 16:40] = 100.0
+    a[16 + shift : 40 + shift, 16 + shift : 40 + shift, 16:40] = 100.0
     return sitk.GetImageFromArray(a)
 
 
 def main() -> None:
     d = tempfile.mkdtemp(prefix="bench_")
-    fixed = os.path.join(d, "fixed.nii.gz"); sitk.WriteImage(_blob(0), fixed)
-    moving = os.path.join(d, "moving.nii.gz"); sitk.WriteImage(_blob(6), moving)
+    fixed = os.path.join(d, "fixed.nii.gz")
+    sitk.WriteImage(_blob(0), fixed)
+    moving = os.path.join(d, "moving.nii.gz")
+    sitk.WriteImage(_blob(6), moving)
 
     # --- ANTs affine ------------------------------------------------------
     ants_out = os.path.join(d, "ants_")
-    ants_reg = cants.presets.affine(fixed, moving, ants_out,
-                                    warped_output=ants_out + "warped.nii.gz")
+    ants_reg = cants.presets.affine(fixed, moving, ants_out, warped_output=ants_out + "warped.nii.gz")
     print("=" * 66, "\nANTs affine\n", "=" * 66, sep="")
     if is_available("antsRegistration"):
         r = ants_reg.run()

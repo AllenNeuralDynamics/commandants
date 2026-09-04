@@ -11,11 +11,10 @@ import os
 import pytest
 
 from commandants import (
+    MI,
     AntsApplyTransforms,
     AntsRegistration,
-    CC,
     Convergence,
-    MI,
     N4BiasFieldCorrection,
     Rigid,
     TempWorkspace,

@@ -21,9 +21,11 @@ def main() -> None:
     # --- 1. The simplest thing: a full rigid+affine+SyN pipeline --------------
     # (center-of-mass init included by default, so no identity-transform surprise)
     reg = presets.syn(
-        fixed, moving, "out_",
+        fixed,
+        moving,
+        "out_",
         warped_output="out_Warped.nii.gz",
-        use_float=True,      # single precision (half the memory) -- the default
+        use_float=True,  # single precision (half the memory) -- the default
         verbose=True,
     )
     print("=" * 70, "\npresets.syn  (Rigid -> Affine -> SyN, COM init)\n", "=" * 70, sep="")
@@ -42,8 +44,10 @@ def main() -> None:
     # Drop the finest (shrink=1) level off the SyN stage; keep everything float.
     print("\n" + "=" * 70, "\nMemory-safe SyN for a huge image\n", "=" * 70, sep="")
     big = presets.syn(
-        fixed, moving, "big_",
-        syn_shrink_factors=(8, 4, 2),        # no full-res level
+        fixed,
+        moving,
+        "big_",
+        syn_shrink_factors=(8, 4, 2),  # no full-res level
         syn_smoothing_sigmas=(3, 2, 1),
         syn_iterations=(100, 70, 50),
     )
@@ -57,8 +61,10 @@ def main() -> None:
     # After running `aff`, its linear result is step1_0GenericAffine.mat:
     affine_mat = aff.expected_transforms()["files"][0]
     warp = presets.syn_only(
-        fixed, moving, "step2_",
-        initial_transform=affine_mat,        # prepend the affine (no COM needed)
+        fixed,
+        moving,
+        "step2_",
+        initial_transform=affine_mat,  # prepend the affine (no COM needed)
     )
     print("affine mat:", affine_mat)
     print("syn_only  :", warp.to_shell())

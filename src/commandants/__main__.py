@@ -154,16 +154,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_which = sub.add_parser("which", help="print the resolved path of a binary (ANTs or elastix)")
     p_which.add_argument("name", nargs="?", default="antsRegistration")
-    p_which.add_argument("--auto-install", dest="auto_install", action="store_true",
-                         help="download managed ANTs if not found")
+    p_which.add_argument(
+        "--auto-install", dest="auto_install", action="store_true", help="download managed ANTs if not found"
+    )
     p_which.set_defaults(func=_cmd_which)
 
     p_version = sub.add_parser("version", help="print commandants and ANTs versions")
     p_version.set_defaults(func=_cmd_version)
 
     p_list = sub.add_parser("list", help="list managed installs")
-    p_list.add_argument("--tool", choices=["ants", "elastix", "all"], default="all",
-                        help="which tool's installs to list (default: all)")
+    p_list.add_argument(
+        "--tool", choices=["ants", "elastix", "all"], default="all", help="which tool's installs to list (default: all)"
+    )
     p_list.set_defaults(func=_cmd_list)
 
     p_uninstall = sub.add_parser("uninstall-ants", help="remove a managed ANTs install")

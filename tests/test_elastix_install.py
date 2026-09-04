@@ -73,7 +73,8 @@ def test_resolve_binary_elastix_uses_env(monkeypatch):
     monkeypatch.setattr(install, "managed_elastix_bin_dir", lambda version=None: None)
     monkeypatch.setenv("ELASTIXPATH", "/elx/bin")
     monkeypatch.setattr(
-        executable, "_candidate_in_dir",
+        executable,
+        "_candidate_in_dir",
         lambda d, n: f"{d}/{n}" if str(d) == "/elx/bin" else None,
     )
     assert executable.resolve_binary("elastix") == "/elx/bin/elastix"
@@ -84,7 +85,8 @@ def test_resolve_binary_elastix_managed(monkeypatch):
     monkeypatch.setattr(executable.shutil, "which", lambda n, path=None: None)
     monkeypatch.setattr(install, "managed_elastix_bin_dir", lambda version=None: "/m/elx/bin")
     monkeypatch.setattr(
-        executable, "_candidate_in_dir",
+        executable,
+        "_candidate_in_dir",
         lambda d, n: f"{d}/{n}" if str(d) == "/m/elx/bin" else None,
     )
     assert executable.resolve_binary("transformix") == "/m/elx/bin/transformix"

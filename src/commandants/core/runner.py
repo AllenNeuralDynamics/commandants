@@ -66,9 +66,7 @@ class CompletedAnts:
     def load(self, key: str = "output"):
         """Load a declared output image as a ``SimpleITK.Image`` (needs ``[io]``)."""
         if key not in self.outputs:
-            raise KeyError(
-                f"No declared output named {key!r}. Available: {sorted(self.outputs)}"
-            )
+            raise KeyError(f"No declared output named {key!r}. Available: {sorted(self.outputs)}")
         from ..io.materialize import require_sitk
 
         return require_sitk().ReadImage(self.outputs[key])
@@ -206,9 +204,7 @@ class AntsCommand:
         """Logical name -> path mapping of files this command will write."""
         return {}
 
-    def _prepare_execution(
-        self, env: Mapping[str, str] | None
-    ) -> Mapping[str, str] | None:
+    def _prepare_execution(self, env: Mapping[str, str] | None) -> Mapping[str, str] | None:
         """Hook run once before executing (not on dry-run); returns the env to use.
 
         The base implementation is a no-op (returns ``env`` unchanged). Subclasses
@@ -281,16 +277,12 @@ class AntsCommand:
         outputs = self.declared_outputs()
 
         if dry_run:
-            return CompletedAnts(
-                argv=argv, returncode=-1, outputs=outputs, workspace=self._workspace
-            )
+            return CompletedAnts(argv=argv, returncode=-1, outputs=outputs, workspace=self._workspace)
 
         env = self._prepare_execution(env)
         start = time.perf_counter()
         if stream or on_line is not None or log_file is not None:
-            result = self._run_streaming(
-                argv, capture, cwd, env, stream, on_line, log_file, outputs
-            )
+            result = self._run_streaming(argv, capture, cwd, env, stream, on_line, log_file, outputs)
         else:
             proc = subprocess.run(
                 argv,
@@ -334,6 +326,7 @@ class AntsCommand:
         sinks: list[Callable[[str], None]] = []
 
         if stream:
+
             def _console(text: str) -> None:
                 sys.stdout.write(text)
                 sys.stdout.flush()

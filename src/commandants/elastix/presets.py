@@ -68,9 +68,7 @@ def parameter_map(kind: str) -> ParameterMap:
     """Return a fresh default parameter map for ``kind`` (translation/rigid/affine/bspline)."""
     k = kind.lower()
     if k not in _TRANSFORM_EXTRAS:
-        raise ValueError(
-            f"Unknown elastix preset {kind!r}; use one of {sorted(_TRANSFORM_EXTRAS)}."
-        )
+        raise ValueError(f"Unknown elastix preset {kind!r}; use one of {sorted(_TRANSFORM_EXTRAS)}.")
     pm = ParameterMap()
     pm.update(_COMMON)
     pm.update(_TRANSFORM_EXTRAS[k])
@@ -100,7 +98,9 @@ def bspline(fixed: Any, moving: Any, out_dir: Any, **kwargs) -> Elastix:
 def affine_bspline(fixed: Any, moving: Any, out_dir: Any, **kwargs) -> Elastix:
     """Two-stage affine -> B-spline (two parameter maps, run sequentially)."""
     return Elastix(
-        fixed, moving, out_dir,
+        fixed,
+        moving,
+        out_dir,
         [parameter_map("affine"), parameter_map("bspline")],
         **kwargs,
     )

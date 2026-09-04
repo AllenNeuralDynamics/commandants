@@ -11,9 +11,9 @@ import os
 import pytest
 
 from commandants import (
+    CC,
     AntsApplyTransforms,
     AntsRegistration,
-    CC,
     Convergence,
     SyN,
     TempWorkspace,

@@ -54,16 +54,16 @@ _LINUX_PREFERENCE = [
 class ToolSpec:
     """Everything provisioning/resolution needs to know about one tool."""
 
-    name: str                     # "ants" | "elastix"
-    repo: str                     # GitHub "owner/repo"
-    managed_subdir: str           # subdir under user_data_dir()
-    marker_binaries: frozenset    # e.g. {"antsRegistration", "antsRegistration.exe"}
-    env_var: str                  # "ANTSPATH" | "ELASTIXPATH"
+    name: str  # "ants" | "elastix"
+    repo: str  # GitHub "owner/repo"
+    managed_subdir: str  # subdir under user_data_dir()
+    marker_binaries: frozenset  # e.g. {"antsRegistration", "antsRegistration.exe"}
+    env_var: str  # "ANTSPATH" | "ELASTIXPATH"
     default_version: str
-    needs_lib_path: bool          # elastix bundles a lib/ that must be on the loader path
+    needs_lib_path: bool  # elastix bundles a lib/ that must be on the loader path
     match_asset: Callable[..., str]
-    progress_label: str           # "ANTs" | "elastix"
-    tag_prefix: str = ""          # "v" for ANTs tags, "" for bare elastix tags
+    progress_label: str  # "ANTs" | "elastix"
+    tag_prefix: str = ""  # "v" for ANTs tags, "" for bare elastix tags
 
     def tag(self, version: str) -> str:
         return f"{self.tag_prefix}{version.lstrip('v')}"
@@ -203,20 +203,14 @@ def select_asset(
         if machine in ("arm64", "aarch64"):
             cands = [n for n in names if "macos" in n.lower() and "arm64" in n.lower()]
         else:
-            cands = [
-                n
-                for n in names
-                if "macos" in n.lower() and ("intel" in n.lower() or "x64" in n.lower())
-            ]
+            cands = [n for n in names if "macos" in n.lower() and ("intel" in n.lower() or "x64" in n.lower())]
     else:  # linux and friends
         if machine not in ("x86_64", "amd64", "x64"):
             raise CommandantsError(
                 f"No prebuilt ANTs binary is published for {system}/{machine}. "
                 "Build ANTs from source or pass an explicit asset= name."
             )
-        linux = [
-            n for n in names if any(k in n.lower() for k in ("ubuntu", "almalinux", "centos"))
-        ]
+        linux = [n for n in names if any(k in n.lower() for k in ("ubuntu", "almalinux", "centos"))]
         cands = []
         for pref in _LINUX_PREFERENCE:
             cands = [n for n in linux if pref in n.lower()]
@@ -229,8 +223,7 @@ def select_asset(
     chosen = zips or cands
     if not chosen:
         raise CommandantsError(
-            f"Could not match a prebuilt ANTs asset for {system}/{machine} among "
-            f"{names}. Pass asset= explicitly."
+            f"Could not match a prebuilt ANTs asset for {system}/{machine} among {names}. Pass asset= explicitly."
         )
     return chosen[0]
 
@@ -245,9 +238,7 @@ def select_elastix_asset(
     key = "windows" if system == "windows" else ("macos" if system == "darwin" else "ubuntu")
     cands = [n for n in names if key in n.lower() and n.lower().endswith(".zip")]
     if not cands:
-        raise CommandantsError(
-            f"No prebuilt elastix asset for {system} among {names}. Pass asset= explicitly."
-        )
+        raise CommandantsError(f"No prebuilt elastix asset for {system} among {names}. Pass asset= explicitly.")
     return cands[0]
 
 
@@ -257,16 +248,12 @@ def select_elastix_asset(
 def _fetch_release(spec: "ToolSpec", version: Optional[str]) -> dict:
     base = f"{_GITHUB_API}/{spec.repo}/releases"
     url = f"{base}/latest" if version in (None, "latest") else f"{base}/tags/{spec.tag(version)}"
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "commandants", "Accept": "application/vnd.github+json"}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": "commandants", "Accept": "application/vnd.github+json"})
     try:
         with urllib.request.urlopen(req) as resp:  # noqa: S310 (trusted host)
             return json.loads(resp.read().decode("utf-8"))
     except Exception as exc:  # pragma: no cover - network dependent
-        raise CommandantsError(
-            f"Failed to query {spec.progress_label} release {version!r}: {exc}"
-        ) from exc
+        raise CommandantsError(f"Failed to query {spec.progress_label} release {version!r}: {exc}") from exc
 
 
 def _download(url: str, dest: str, label: str = "ANTs", quiet: bool = False) -> None:
@@ -317,9 +304,7 @@ def _find_bin_dir(root: str, markers: Optional[frozenset] = None) -> str:
     for dirpath, _dirs, files in os.walk(root):
         if exe_names & set(files):
             return dirpath
-    raise CommandantsError(
-        f"Extracted archive under {root!r} but found no {sorted(exe_names)[0]} binary."
-    )
+    raise CommandantsError(f"Extracted archive under {root!r} but found no {sorted(exe_names)[0]} binary.")
 
 
 def _find_lib_dir(root: str) -> Optional[str]:
@@ -346,15 +331,11 @@ def _install(
     resolved_version = tag.lstrip("v") or (version if version != "latest" else "unknown")
     assets = {a["name"]: a["browser_download_url"] for a in release.get("assets", [])}
     if not assets:
-        raise CommandantsError(
-            f"{spec.progress_label} release {tag or version!r} has no downloadable assets."
-        )
+        raise CommandantsError(f"{spec.progress_label} release {tag or version!r} has no downloadable assets.")
 
     name = asset or spec.match_asset(list(assets))
     if name not in assets:
-        raise CommandantsError(
-            f"Asset {name!r} not found in release {tag!r}. Available: {sorted(assets)}"
-        )
+        raise CommandantsError(f"Asset {name!r} not found in release {tag!r}. Available: {sorted(assets)}")
 
     root = dest or _tool_root(spec)
     version_dir = os.path.join(root, resolved_version)
@@ -363,8 +344,7 @@ def _install(
     existing = _read_marker(marker)
     if existing and not force:
         if not quiet:
-            print(f"{spec.progress_label} {resolved_version} already installed at {existing}",
-                  file=sys.stderr)
+            print(f"{spec.progress_label} {resolved_version} already installed at {existing}", file=sys.stderr)
         return existing
 
     if os.path.isdir(version_dir) and force:
@@ -470,9 +450,7 @@ ELASTIX_SPEC = ToolSpec(
     tag_prefix="",
 )
 
-_ELASTIX_BINARIES = frozenset(
-    {"elastix", "elastix.exe", "transformix", "transformix.exe"}
-)
+_ELASTIX_BINARIES = frozenset({"elastix", "elastix.exe", "transformix", "transformix.exe"})
 
 
 def spec_for_binary(name: str) -> "ToolSpec":

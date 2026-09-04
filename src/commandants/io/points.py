@@ -66,9 +66,7 @@ def write_points(
         writer.writerow(header)
         for i, row in enumerate(rows):
             if len(row) < dim:
-                raise ValueError(
-                    f"Point {i} has {len(row)} coordinates but dim={dim}."
-                )
+                raise ValueError(f"Point {i} has {len(row)} coordinates but dim={dim}.")
             out = list(row[:dim])
             if labels is not None:
                 out.append(labels[i])

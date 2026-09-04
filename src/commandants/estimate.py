@@ -30,11 +30,11 @@ _BASE_OVERHEAD_BYTES = 150 * 1024 * 1024
 _BASE_IMAGE_BUFFERS = 4
 #: Extra full-size image buffers a metric allocates (by class name).
 _METRIC_IMAGE_BUFFERS = {
-    "CC": 8,          # neighborhood running-sum images
+    "CC": 8,  # neighborhood running-sum images
     "MeanSquares": 2,
     "Demons": 3,
     "GC": 3,
-    "MI": 0,          # histogram-based -> negligible at image scale
+    "MI": 0,  # histogram-based -> negligible at image scale
     "Mattes": 0,
     "PSE": 0,
     "ICP": 0,
@@ -114,16 +114,12 @@ class ResourceEstimate:
             f"  peak memory     : ~{self.peak_memory_human}",
         ]
         if self.est_runtime_human:
-            lines.append(
-                f"  est. runtime    : ~{self.est_runtime_human} "
-                f"(@{self.threads} thread(s); very rough)"
-            )
+            lines.append(f"  est. runtime    : ~{self.est_runtime_human} (@{self.threads} thread(s); very rough)")
         lines.append("  per-stage peak memory:")
         for s in self.per_stage:
             kind = "deformable" if s.deformable else "linear"
             lines.append(
-                f"    [{s.index}] {s.transform:<26} {kind:<10} "
-                f"finest shrink {s.finest_shrink} -> ~{s.memory_human}"
+                f"    [{s.index}] {s.transform:<26} {kind:<10} finest shrink {s.finest_shrink} -> ~{s.memory_human}"
             )
         return "\n".join(lines)
 
@@ -237,10 +233,7 @@ def estimate_registration(
     else:
         ref = fixed if fixed is not None else _infer_reference(reg)
         if ref is None:
-            raise ValueError(
-                "Could not determine the fixed image. Pass fixed=<path/image> or "
-                "shape=(x, y, z)."
-            )
+            raise ValueError("Could not determine the fixed image. Pass fixed=<path/image> or shape=(x, y, z).")
         img_shape = _shape_from_reference(ref)
 
     dim = reg.dimensionality
@@ -253,11 +246,9 @@ def estimate_registration(
 
     for i, stage in enumerate(reg.stages):
         finest = min(stage.shrink_factors)
-        n_eff = n_voxels / (finest ** dim)
+        n_eff = n_voxels / (finest**dim)
 
-        metric_buffers = sum(
-            _METRIC_IMAGE_BUFFERS.get(type(m).__name__, 1) for m in stage.metrics
-        )
+        metric_buffers = sum(_METRIC_IMAGE_BUFFERS.get(type(m).__name__, 1) for m in stage.metrics)
         image_bytes = (_BASE_IMAGE_BUFFERS + metric_buffers) * n_eff * real_bytes
 
         copies, deformable = _field_copies(stage.transform)
@@ -282,7 +273,7 @@ def estimate_registration(
         transform_factor = 3.0 if deformable else 1.0
         for level, iters in enumerate(stage.convergence.iterations):
             s = stage.shrink_factors[level]
-            work += iters * (n_voxels / (s ** dim)) * metric_cost * transform_factor
+            work += iters * (n_voxels / (s**dim)) * metric_cost * transform_factor
 
     peak = _BASE_OVERHEAD_BYTES + peak_stage_bytes
     threads = max(1, int(threads))

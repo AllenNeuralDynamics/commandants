@@ -12,19 +12,34 @@ from __future__ import annotations
 import re
 import sys
 
-from commandants import Affine, AntsRegistration, Convergence, MI, Rigid, SyN
+from commandants import MI, Affine, AntsRegistration, Convergence, Rigid, SyN
 
 
 def build_base(fixed: str, moving: str) -> AntsRegistration:
     """A Rigid -> Affine -> SyN registration with no masks yet."""
     reg = AntsRegistration(3, output="reg_", warped_output="reg_Warped.nii.gz", verbose=True)
     reg.initialize_from_images(fixed, moving, init="center-of-mass")
-    reg.add_stage(Rigid(0.25), MI(fixed, moving, bins=32, sampling="Regular", sampling_pct=0.25),
-                  Convergence([2100, 1200, 1200, 10]), [6, 4, 2, 1], [3, 2, 1, 0])
-    reg.add_stage(Affine(0.25), MI(fixed, moving, bins=32, sampling="Regular", sampling_pct=0.25),
-                  Convergence([2100, 1200, 1200, 10]), [6, 4, 2, 1], [3, 2, 1, 0])
-    reg.add_stage(SyN(0.25, 3, 0), MI(fixed, moving, bins=32, sampling="Regular"),
-                  Convergence([100, 70, 50, 20]), [6, 4, 2, 1], [3, 2, 1, 0])
+    reg.add_stage(
+        Rigid(0.25),
+        MI(fixed, moving, bins=32, sampling="Regular", sampling_pct=0.25),
+        Convergence([2100, 1200, 1200, 10]),
+        [6, 4, 2, 1],
+        [3, 2, 1, 0],
+    )
+    reg.add_stage(
+        Affine(0.25),
+        MI(fixed, moving, bins=32, sampling="Regular", sampling_pct=0.25),
+        Convergence([2100, 1200, 1200, 10]),
+        [6, 4, 2, 1],
+        [3, 2, 1, 0],
+    )
+    reg.add_stage(
+        SyN(0.25, 3, 0),
+        MI(fixed, moving, bins=32, sampling="Regular"),
+        Convergence([100, 70, 50, 20]),
+        [6, 4, 2, 1],
+        [3, 2, 1, 0],
+    )
     return reg
 
 
@@ -51,13 +66,13 @@ def main() -> None:
     # (2) SYN ONLY: mask just the final (SyN) stage via add_stage(moving_mask=...).
     #     Rigid/Affine automatically get the [NA,NA] placeholder ANTs requires.
     syn_only = build_base(fixed, moving)
-    syn_only.stages[-1].moving_mask = mask   # or pass moving_mask=... to add_stage
+    syn_only.stages[-1].moving_mask = mask  # or pass moving_mask=... to add_stage
     show_masks("(2) SyN only    -- moving_mask on the last stage", syn_only)
 
     # (3) BONUS: global default + a per-stage override (fixed+moving on SyN).
     mixed = build_base(fixed, moving)
-    mixed.set_masks(fixed_mask="head_mask.nii.gz")      # default fixed mask, all stages
-    mixed.stages[-1].moving_mask = mask                 # add a moving mask on SyN only
+    mixed.set_masks(fixed_mask="head_mask.nii.gz")  # default fixed mask, all stages
+    mixed.stages[-1].moving_mask = mask  # add a moving mask on SyN only
     show_masks("(3) Global fixed default + moving mask on SyN", mixed)
 
     print("\n" + "=" * 70)

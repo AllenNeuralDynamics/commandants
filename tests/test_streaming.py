@@ -73,8 +73,8 @@ def test_tee_console_and_file(tmp_path, capsys):
     cmd = _PyCommand()
     cmd.extra_args("-c", "print('teed')")
     cmd.run(stream=True, log_file=str(log))
-    assert "teed" in capsys.readouterr().out       # console
-    assert "teed" in log.read_text()               # and file
+    assert "teed" in capsys.readouterr().out  # console
+    assert "teed" in log.read_text()  # and file
 
 
 def test_stream_writes_to_current_sys_stdout(monkeypatch):

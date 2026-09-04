@@ -106,6 +106,116 @@ def affine_bspline(fixed: Any, moving: Any, out_dir: Any, **kwargs) -> Elastix:
     )
 
 
+# ---------------------------------------------------------------------------
+# Allen CCF / STPT template-construction schedule
+# ---------------------------------------------------------------------------
+# Mimics the AllenInstitute/stpt_registration pipeline (Oh 2014 / Kuan 2015; the
+# method used to build the Allen Mouse CCF average template): a *global* stage of
+# rigid + affine Mattes mutual information (64 histogram bins, center-of-gravity
+# init, coarse-to-fine from shrink factor 8), followed by a *local* 3rd-order
+# B-spline driven by normalized cross-correlation over a 4-level coarse-to-fine
+# grid (~30 -> 4 voxel spacing) with random sampling.
+#
+# CAVEAT: the original deformable step uses a discrete MRF / graph-labeling
+# optimizer run symmetrically (forward + backward, composed -> invertible). elastix
+# uses continuous stochastic gradient descent and is not symmetric by construction,
+# so the B-spline stage matches the original *in spirit* (transform order, metric,
+# grid schedule, sampling), not in optimizer mechanism. Every value is overridable.
+
+_CCF_COMMON = {
+    "Registration": "MultiResolutionRegistration",
+    "FixedImagePyramid": "FixedSmoothingImagePyramid",
+    "MovingImagePyramid": "MovingSmoothingImagePyramid",
+    "Interpolator": "BSplineInterpolator",
+    "BSplineInterpolationOrder": 1,  # linear during optimization
+    "ResampleInterpolator": "FinalBSplineInterpolator",
+    "FinalBSplineInterpolationOrder": 3,
+    "Resampler": "DefaultResampler",
+    "Optimizer": "AdaptiveStochasticGradientDescent",  # original used ITK RegularStepGradientDescent
+    "ImageSampler": "RandomCoordinate",
+    "NewSamplesEveryIteration": True,
+    "FixedInternalImagePixelType": "float",
+    "MovingInternalImagePixelType": "float",
+    "WriteResultImage": True,
+    "ResultImagePixelType": "float",
+    "ResultImageFormat": "nii",
+}
+
+# Coarse-to-fine pyramid for the linear stages: factor 8 -> 1 over 4 levels, per axis.
+_CCF_LINEAR_SCHEDULE = [8, 8, 8, 4, 4, 4, 2, 2, 2, 1, 1, 1]
+
+
+def _ccf_linear_map(transform: str) -> ParameterMap:
+    pm = ParameterMap()
+    pm.update(_CCF_COMMON)
+    pm.update(
+        {
+            "Transform": transform,
+            "AutomaticScalesEstimation": True,
+            "Metric": "AdvancedMattesMutualInformation",
+            "NumberOfHistogramBins": 64,  # matches the STPT pipeline
+            "NumberOfResolutions": 4,
+            "ImagePyramidSchedule": _CCF_LINEAR_SCHEDULE,
+            # NOTE: the original ITK metric sampled 250000 points once; elastix re-samples
+            # every iteration, so a few thousand is equivalent -- do NOT use 250000 here.
+            "NumberOfSpatialSamples": 3000,
+            "MaximumNumberOfIterations": 500,
+            "HowToCombineTransforms": "Compose",
+        }
+    )
+    if transform == "EulerTransform":
+        pm.update(
+            {
+                "AutomaticTransformInitialization": True,
+                "AutomaticTransformInitializationMethod": "CenterOfGravity",  # original MomentsOn()
+            }
+        )
+    return pm
+
+
+def _ccf_bspline_map() -> ParameterMap:
+    pm = ParameterMap()
+    pm.update(_CCF_COMMON)
+    pm.update(
+        {
+            "Transform": "BSplineTransform",
+            "BSplineTransformSplineOrder": 3,  # original B-spline order 3
+            "Metric": "AdvancedNormalizedCorrelation",  # original cross-correlation
+            "NumberOfResolutions": 4,  # 4-level coarse-to-fine
+            "FinalGridSpacingInVoxels": 4,  # finest grid ~4 voxels
+            "GridSpacingSchedule": [7.5, 3.75, 2.0, 1.0],  # ~30, 15, 8, 4 voxel grids
+            "NumberOfSpatialSamples": 1024,  # original samplenum
+            "MaximumNumberOfIterations": 1000,
+            "HowToCombineTransforms": "Compose",
+        }
+    )
+    return pm
+
+
+def ccf_parameter_maps() -> list[ParameterMap]:
+    """The three STPT/CCF stages (rigid, affine, B-spline) as editable ParameterMaps."""
+    return [
+        _ccf_linear_map("EulerTransform"),
+        _ccf_linear_map("AffineTransform"),
+        _ccf_bspline_map(),
+    ]
+
+
+def ccf_global(fixed: Any, moving: Any, out_dir: Any, **kwargs) -> Elastix:
+    """STPT/CCF *global* alignment only: rigid -> affine Mattes MI (no deformable)."""
+    maps = ccf_parameter_maps()[:2]
+    return Elastix(fixed, moving, out_dir, maps, **kwargs)
+
+
+def ccf_stpt(fixed: Any, moving: Any, out_dir: Any, **kwargs) -> Elastix:
+    """Full STPT/CCF schedule: rigid -> affine (MI) -> B-spline (NCC).
+
+    Mimics AllenInstitute/stpt_registration template construction. See the module
+    notes above for what transfers exactly and the deformable-optimizer caveat.
+    """
+    return Elastix(fixed, moving, out_dir, ccf_parameter_maps(), **kwargs)
+
+
 __all__ = [
     "parameter_map",
     "translation",
@@ -113,4 +223,7 @@ __all__ = [
     "affine",
     "bspline",
     "affine_bspline",
+    "ccf_parameter_maps",
+    "ccf_global",
+    "ccf_stpt",
 ]

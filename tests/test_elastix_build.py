@@ -113,3 +113,23 @@ def test_preset_builders_return_ready_elastix():
     reg = presets.affine_bspline("f.nii", "m.nii", "out")
     assert isinstance(reg, Elastix)
     assert len(reg.param_maps) == 2
+
+
+def test_ccf_stpt_preset_schedule():
+    reg = presets.ccf_stpt("f.nii", "m.nii", "out")
+    assert isinstance(reg, Elastix)
+    rigid, affine, bspline = reg.param_maps  # rigid -> affine -> B-spline
+    # Global stages: Mattes MI with 64 bins, coarse-to-fine from shrink 8.
+    assert rigid["Transform"] == ("EulerTransform",)
+    assert rigid["Metric"] == ("AdvancedMattesMutualInformation",)
+    assert rigid["NumberOfHistogramBins"] == (64,)
+    assert rigid["AutomaticTransformInitializationMethod"] == ("CenterOfGravity",)
+    assert rigid["ImagePyramidSchedule"][:3] == (8, 8, 8)
+    assert affine["Transform"] == ("AffineTransform",)
+    # Local stage: 3rd-order B-spline driven by normalized cross-correlation.
+    assert bspline["Transform"] == ("BSplineTransform",)
+    assert bspline["BSplineTransformSplineOrder"] == (3,)
+    assert bspline["Metric"] == ("AdvancedNormalizedCorrelation",)
+    assert bspline["NumberOfSpatialSamples"] == (1024,)
+    # ccf_global is the linear-only prefix.
+    assert len(presets.ccf_global("f.nii", "m.nii", "out").param_maps) == 2

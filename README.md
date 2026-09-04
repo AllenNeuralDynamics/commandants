@@ -418,6 +418,12 @@ Full worked example (all three ways to build a map, multi-stage, inspect, run, a
 [`examples/elastix_parameter_maps.py`](examples/elastix_parameter_maps.py). A backend
 timing comparison: [`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
 
+There's also a domain preset, `presets.ccf_stpt(...)` (and `ccf_global`), that reproduces
+the [Allen STPT → CCF](https://github.com/AllenInstitute/stpt_registration) template-construction
+schedule — rigid → affine Mattes MI (64 bins, center-of-gravity init, coarse-to-fine from
+shrink 8) → 3rd-order B-spline NCC over a 4-level grid. (The original deformable step uses a
+discrete MRF optimizer, so the B-spline stage matches in spirit, not mechanism.)
+
 ## Design
 
 ```

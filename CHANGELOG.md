@@ -4,6 +4,18 @@ All notable changes to this project are documented here. This file is maintained
 [commitizen](https://commitizen-tools.github.io/commitizen/) from conventional-commit
 messages. The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+### Features
+
+- **elastix CCF/STPT presets** (`commandants.elastix.presets`): `ccf_stpt` (rigid →
+  affine Mattes MI → B-spline NCC) and `ccf_global` (linear only), plus
+  `ccf_parameter_maps()` for editing. Mimics the AllenInstitute/stpt_registration
+  template-construction schedule (64-bin MI, center-of-gravity init, coarse-to-fine
+  from shrink 8; 3rd-order B-spline, NCC, 4-level grid ~30→4 voxels). The original
+  deformable step uses a discrete MRF optimizer, so the B-spline stage matches in
+  spirit, not in optimizer mechanism (documented in the preset).
+
 ## 0.3.0
 
 ### Features

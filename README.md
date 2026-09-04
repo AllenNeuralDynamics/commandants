@@ -396,9 +396,27 @@ print(result.duration_seconds)  # wall-clock time, for benchmarking vs ANTs
 elastix.Transformix("out_dir/TransformParameters.0.txt", "warp_out", moving="other.nii.gz").run()
 ```
 
-Parameter maps are fully editable (`elastix.ParameterMap` / `presets.parameter_map("rigid")`),
-round-trip elastix `.txt` files, and multiple maps become sequential `-p` stages.
-A worked comparison: [`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
+The presets are the quick path. For the **transparent path** — the elastix analogue of
+hand-composing `antsRegistration` stages — work with parameter maps directly:
+`elastix.ParameterMap` (or `presets.parameter_map("rigid")` as a starting point) is an
+ordered, dict-like model of an elastix `(Key value)` file. Build one from scratch, tweak
+a preset, or load and edit an existing `.txt` — it round-trips the exact text, and a list
+of maps becomes sequential `-p` stages.
+
+```python
+from commandants.elastix import ParameterMap, presets
+
+affine = presets.parameter_map("affine")  # a curated default map to start from
+affine.set("MaximumNumberOfIterations", 512)  # tweak any setting
+affine["NumberOfResolutions"] = 5  # dict-style works too
+bspline = presets.parameter_map("bspline").set("FinalGridSpacingInPhysicalUnits", 12)
+
+reg = elastix.Elastix("fixed.nii.gz", "moving.nii.gz", "out_dir", [affine, bspline])  # affine -> B-spline
+```
+
+Full worked example (all three ways to build a map, multi-stage, inspect, run, and apply):
+[`examples/elastix_parameter_maps.py`](examples/elastix_parameter_maps.py). A backend
+timing comparison: [`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
 
 ## Design
 

@@ -29,6 +29,7 @@ from .registration import (
     MI,
     Affine,
     AntsRegistration,
+    BSplineSyN,
     Convergence,
     Mattes,
     MeanSquares,
@@ -387,7 +388,140 @@ def _add_syn_stage(
     )
 
 
+# ---------------------------------------------------------------------------
+# Allen CCF / STPT template-construction analogue (ANTs)
+# ---------------------------------------------------------------------------
+# The closest ANTs parameter analogue of the AllenInstitute/stpt_registration
+# pipeline (Oh 2014 / Kuan 2015), the elastix `ccf_stpt` preset's ANTs sibling:
+#   - global: Rigid + Affine, Mattes mutual information with 64 histogram bins
+#     (matches the STPT metric), center-of-gravity init, coarse-to-fine from
+#     shrink factor 8;
+#   - deformable: BSplineSyN driven by neighborhood cross-correlation (CC).
+#
+# Why BSplineSyN + CC: the STPT local step is a 3rd-order B-spline optimized
+# symmetrically (forward + backward, composed -> invertible) under cross-correlation.
+# ANTs' BSplineSyN is a B-spline-regularized SYMMETRIC diffeomorphic transform, so it
+# captures both the B-spline character AND the symmetric/invertible property -- a
+# closer match than elastix's (asymmetric) B-spline. CC is the direct NCC analogue.
+# The original deformable optimizer is a discrete MRF, so this remains an analogue,
+# not a reproduction (use `commandants.stpt` to drive the real binaries).
+
+_CCF_BINS = 64
+_CCF_LINEAR_SHRINK = (8, 4, 2, 1)  # coarse start at factor 8 (STPT StartingFactors(8))
+_CCF_LINEAR_SMOOTH = (3, 2, 1, 0)
+_CCF_LINEAR_ITERS = (1000, 500, 250, 100)
+_CCF_DEF_SHRINK = (8, 4, 2, 1)
+_CCF_DEF_SMOOTH = (3, 2, 1, 0)
+_CCF_DEF_ITERS = (100, 70, 50, 20)
+
+
+def ccf_global(fixed, moving, output, *, bins=_CCF_BINS, **kwargs) -> AntsRegistration:
+    """STPT/CCF *global* analogue: Rigid + Affine, Mattes MI (64 bins), COM init, coarse-to-fine from shrink 8."""
+    kwargs.setdefault("iterations", _CCF_LINEAR_ITERS)
+    kwargs.setdefault("shrink_factors", _CCF_LINEAR_SHRINK)
+    kwargs.setdefault("smoothing_sigmas", _CCF_LINEAR_SMOOTH)
+    return _linear_preset(fixed, moving, output, [Rigid, Affine], metric="mattes", bins=bins, **kwargs)
+
+
+def ccf_stpt(
+    fixed,
+    moving,
+    output,
+    *,
+    dim=3,
+    warped_output=None,
+    inverse_warped_output=None,
+    init="center-of-mass",
+    initial_transform=None,
+    # linear (Rigid + Affine): Mattes MI, 64 bins
+    aff_bins=_CCF_BINS,
+    aff_sampling="Regular",
+    aff_sampling_pct=_LINEAR_SAMPLING_PCT,
+    aff_grad_step=_LINEAR_GRAD_STEP,
+    aff_iterations=_CCF_LINEAR_ITERS,
+    aff_shrink_factors=_CCF_LINEAR_SHRINK,
+    aff_smoothing_sigmas=_CCF_LINEAR_SMOOTH,
+    # deformable: BSplineSyN + cross-correlation
+    grad_step=0.1,
+    update_mesh_size=26,
+    total_mesh_size=0,
+    syn_radius=4,
+    def_iterations=_CCF_DEF_ITERS,
+    def_shrink_factors=_CCF_DEF_SHRINK,
+    def_smoothing_sigmas=_CCF_DEF_SMOOTH,
+    smoothing_units="vox",
+    use_float=True,
+    winsorize=(0.005, 0.995),
+    use_histogram_matching=False,
+    mask=None,
+    moving_mask=None,
+    collapse_output_transforms=None,
+    write_composite_transform=False,
+    random_seed=None,
+    verbose=False,
+    ants_path=None,
+) -> AntsRegistration:
+    """STPT/CCF analogue (ANTs): Rigid + Affine (Mattes MI, 64 bins) -> BSplineSyN (cross-correlation).
+
+    Mirrors AllenInstitute/stpt_registration template construction. See the module notes
+    above for what transfers and why BSplineSyN + CC is the closest ANTs match to the
+    original symmetric B-spline deformable step.
+    """
+    reg = _new_reg(
+        dim,
+        output,
+        warped_output,
+        inverse_warped_output,
+        use_float,
+        winsorize,
+        use_histogram_matching,
+        collapse_output_transforms,
+        write_composite_transform,
+        random_seed,
+        verbose,
+        ants_path,
+    )
+    if initial_transform is not None:
+        reg.add_initial_moving_transform(initial_transform)
+    elif init is not None:
+        reg.initialize_from_images(fixed, moving, init=init)
+    if mask is not None or moving_mask is not None:
+        reg.set_masks(mask, moving_mask)
+    for transform_cls in (Rigid, Affine):
+        reg.add_stage(
+            transform=transform_cls(gradient_step=aff_grad_step),
+            metrics=_make_metric(
+                "mattes", fixed, moving, bins=aff_bins, sampling=aff_sampling, sampling_pct=aff_sampling_pct
+            ),
+            convergence=Convergence(aff_iterations),
+            shrink_factors=list(aff_shrink_factors),
+            smoothing_sigmas=list(aff_smoothing_sigmas),
+            smoothing_units=smoothing_units,
+        )
+    reg.add_stage(
+        transform=BSplineSyN(
+            gradient_step=grad_step, update_mesh_size=update_mesh_size, total_mesh_size=total_mesh_size
+        ),
+        metrics=_make_metric("cc", fixed, moving, radius=syn_radius),
+        convergence=Convergence(def_iterations),
+        shrink_factors=list(def_shrink_factors),
+        smoothing_sigmas=list(def_smoothing_sigmas),
+        smoothing_units=smoothing_units,
+    )
+    return reg
+
+
 #: Alias for users who write it without the underscore.
 synonly = syn_only
 
-__all__ = ["translation", "rigid", "similarity", "affine", "syn", "syn_only", "synonly"]
+__all__ = [
+    "translation",
+    "rigid",
+    "similarity",
+    "affine",
+    "syn",
+    "syn_only",
+    "synonly",
+    "ccf_global",
+    "ccf_stpt",
+]

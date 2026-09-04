@@ -8,6 +8,11 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **ANTs STPT/CCF analogue presets** (`commandants.presets`): `ccf_stpt` (Rigid →
+  Affine Mattes MI, 64 bins → `BSplineSyN` cross-correlation) and `ccf_global` (linear
+  only), the ANTs counterpart to the elastix `ccf_stpt` preset. Uses `BSplineSyN` — ANTs'
+  B-spline-regularized *symmetric* diffeomorphic transform — as the closest match to the
+  Allen STPT local step's symmetric, invertible B-spline; CC is the direct NCC analogue.
 - **elastix CCF/STPT presets** (`commandants.elastix.presets`): `ccf_stpt` (rigid →
   affine Mattes MI → B-spline NCC) and `ccf_global` (linear only), plus
   `ccf_parameter_maps()` for editing. Mimics the AllenInstitute/stpt_registration

@@ -138,6 +138,14 @@ reg.run(stream=True)
 | `syn` | Rigid → Affine → SyN (≈ antsRegistrationSyN) | yes |
 | `syn_only` | SyN | **no** (assumes pre-aligned; pass `init=` or `initial_transform=`) |
 | `translation`, `similarity` | (linear) | yes |
+| `ccf_stpt` | Rigid → Affine (Mattes MI, 64 bins) → BSplineSyN (CC) | yes |
+| `ccf_global` | Rigid → Affine (linear only) | yes |
+
+`ccf_stpt` / `ccf_global` are the ANTs analogue of the [Allen STPT → CCF](https://github.com/AllenInstitute/stpt_registration)
+template-construction schedule (the sibling of the elastix `ccf_stpt` preset). It uses
+`BSplineSyN` — ANTs' B-spline-regularized *symmetric* diffeomorphic transform — as the
+closest match to the STPT local step's symmetric, invertible B-spline, with CC standing in
+for the original cross-correlation.
 
 Defaults mirror ANTsPyX (single precision, Mattes MI, light winsorization, and the
 same linear schedule — `Rigid/Affine[0.25]`, `2100x1200x1200x10` iterations,

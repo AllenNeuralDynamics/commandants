@@ -97,3 +97,25 @@ def test_initial_transform_overrides_com_init():
 def test_dim_2d():
     reg = presets.rigid("f.nii", "m.nii", "out_", dim=2)
     assert reg.dimensionality == 2
+
+
+def test_ccf_stpt_ants_analogue():
+    # STPT/CCF analogue: Rigid + Affine (Mattes MI, 64 bins) -> BSplineSyN (CC).
+    reg = presets.ccf_stpt("f.nii", "m.nii", "out_")
+    assert _stages(reg) == ["Rigid", "Affine", "BSplineSyN"]
+    assert _has_init(reg)  # center-of-gravity init
+    argv = reg.build_command()
+    # Linear stages: Mattes MI with 64 histogram bins, coarse start at shrink 8.
+    assert any(tok.startswith("Mattes[") and ",64," in tok for tok in argv)
+    assert "8x4x2x1" in argv
+    # Deformable: symmetric B-spline (BSplineSyN) driven by cross-correlation.
+    assert any(tok.startswith("BSplineSyN[") for tok in argv)
+    assert any(tok.startswith("CC[") for tok in argv)
+
+
+def test_ccf_global_is_linear_only():
+    reg = presets.ccf_global("f.nii", "m.nii", "out_")
+    assert _stages(reg) == ["Rigid", "Affine"]
+    argv = reg.build_command()
+    assert any(tok.startswith("Mattes[") and ",64," in tok for tok in argv)
+    assert not any(tok.startswith("BSplineSyN[") for tok in argv)

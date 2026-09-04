@@ -47,7 +47,17 @@ from .preprocessing import (
     ResampleImage,
     ThresholdImage,
 )
-from .presets import affine, rigid, similarity, syn, syn_only, synonly, translation
+from .presets import (
+    affine,
+    ccf_global,
+    ccf_stpt,
+    rigid,
+    similarity,
+    syn,
+    syn_only,
+    synonly,
+    translation,
+)
 from .registration import (
     CC,
     GC,
@@ -119,6 +129,8 @@ __all__ = [
     "syn",
     "syn_only",
     "synonly",
+    "ccf_global",
+    "ccf_stpt",
     # in-memory images + point I/O
     "TempWorkspace",
     "is_sitk_image",

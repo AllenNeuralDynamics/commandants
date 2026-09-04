@@ -33,10 +33,13 @@ from .estimate import ResourceEstimate, estimate_registration
 from .exit_codes import ExitCodeExplanation, explain_exit_code
 from .install import (
     install_ants,
+    install_elastix,
     installed_versions,
     managed_bin_dir,
     uninstall_ants,
+    uninstall_elastix,
 )
+from . import elastix
 from . import presets
 from .io import TempWorkspace, is_sitk_image, read_points, write_points
 from .presets import affine, rigid, similarity, syn, syn_only, synonly, translation
@@ -98,6 +101,10 @@ __all__ = [
     "uninstall_ants",
     "managed_bin_dir",
     "installed_versions",
+    # elastix (sibling subpackage)
+    "elastix",
+    "install_elastix",
+    "uninstall_elastix",
     # resource estimation
     "estimate_registration",
     "ResourceEstimate",

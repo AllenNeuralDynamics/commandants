@@ -14,6 +14,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
@@ -53,6 +54,9 @@ class CompletedAnts:
     stderr: str | None = None
     outputs: dict[str, str] = field(default_factory=dict)
     workspace: Optional[TempWorkspace] = None
+    #: Wall-clock execution time in seconds (``None`` for dry runs). Handy for
+    #: benchmarking one tool against another.
+    duration_seconds: float | None = None
 
     @property
     def temp_dir(self) -> str | None:
@@ -114,6 +118,9 @@ class AntsCommand:
         self._ws_base: Optional[str] = None
         self._ws_keep: bool = True
         self._active_resolver: Resolver = str_resolve
+        #: True while build_command is materializing (vs previewing). Subclasses
+        #: (e.g. Elastix) read this to decide whether to write temp text files.
+        self._materialize: bool = False
 
     # -- escape hatch ---------------------------------------------------------
     def extra_args(self, *args: Any) -> "AntsCommand":
@@ -188,6 +195,7 @@ class AntsCommand:
         """
         head = resolve_binary(self.binary, self.ants_path) if resolve else self.binary
         self._active_resolver = self._resolver_for(materialize)
+        self._materialize = materialize
         try:
             body = [*self._build_args(), *self._extra_args]
         finally:
@@ -197,6 +205,17 @@ class AntsCommand:
     def declared_outputs(self) -> dict[str, str]:
         """Logical name -> path mapping of files this command will write."""
         return {}
+
+    def _prepare_execution(
+        self, env: Mapping[str, str] | None
+    ) -> Mapping[str, str] | None:
+        """Hook run once before executing (not on dry-run); returns the env to use.
+
+        The base implementation is a no-op (returns ``env`` unchanged). Subclasses
+        override it to prepare the run -- e.g. create an output directory or inject
+        a library path into the environment -- without touching the ANTs path.
+        """
+        return env
 
     def run(
         self,
@@ -266,6 +285,8 @@ class AntsCommand:
                 argv=argv, returncode=-1, outputs=outputs, workspace=self._workspace
             )
 
+        env = self._prepare_execution(env)
+        start = time.perf_counter()
         if stream or on_line is not None or log_file is not None:
             result = self._run_streaming(
                 argv, capture, cwd, env, stream, on_line, log_file, outputs
@@ -287,6 +308,7 @@ class AntsCommand:
                 outputs=outputs,
                 workspace=self._workspace,
             )
+        result.duration_seconds = time.perf_counter() - start
 
         if check and result.returncode != 0:
             raise AntsRuntimeError(

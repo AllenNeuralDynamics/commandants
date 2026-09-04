@@ -48,28 +48,34 @@ def resolve_binary(
     ants_path: str | os.PathLike[str] | None = None,
     auto_install: bool | None = None,
 ) -> str:
-    """Resolve the absolute path to an ANTs binary named ``name``.
+    """Resolve the absolute path to a registration binary named ``name``.
 
-    Search order (first hit wins): explicit ``ants_path`` -> ``$ANTSPATH`` ->
-    system ``PATH`` -> commandants-managed install (see
-    :mod:`commandants.install`).
+    Search order (first hit wins): explicit ``ants_path`` -> the tool's env var
+    (``$ANTSPATH`` for ANTs, ``$ELASTIXPATH`` for elastix) -> system ``PATH`` ->
+    commandants-managed install (see :mod:`commandants.install`). Which tool a
+    binary belongs to is decided by :func:`commandants.install.spec_for_binary`
+    (``elastix``/``transformix`` -> elastix, else ANTs).
 
     Parameters
     ----------
     name:
-        Binary name, e.g. ``"antsRegistration"``.
+        Binary name, e.g. ``"antsRegistration"`` or ``"elastix"``.
     ants_path:
-        Optional explicit directory to look in first.
+        Optional explicit directory to look in first (works for either tool).
     auto_install:
         If the binary is not found anywhere and this is True (or the
         ``COMMANDANTS_AUTO_INSTALL`` environment variable is set), download the
-        managed ANTs binaries and retry. Defaults to the env var.
+        managed binaries for that tool and retry. Defaults to the env var.
 
     Raises
     ------
     AntsNotFoundError
         If the binary cannot be found through any of the search locations.
     """
+    from ..install import spec_for_binary  # local import avoids an import cycle
+
+    spec = spec_for_binary(name)
+
     key = (name, str(ants_path) if ants_path is not None else None)
     if key in _RESOLVE_CACHE:
         return _RESOLVE_CACHE[key]
@@ -79,16 +85,16 @@ def resolve_binary(
     # 1. explicit directory
     if ants_path is not None:
         hit = _candidate_in_dir(ants_path, name)
-        tried.append(f"ants_path={ants_path}")
+        tried.append(f"path={ants_path}")
         if hit:
             _RESOLVE_CACHE[key] = hit
             return hit
 
-    # 2. ANTSPATH env var
-    env_path = os.environ.get("ANTSPATH")
+    # 2. tool env var ($ANTSPATH / $ELASTIXPATH)
+    env_path = os.environ.get(spec.env_var)
     if env_path:
         hit = _candidate_in_dir(env_path, name)
-        tried.append(f"$ANTSPATH={env_path}")
+        tried.append(f"${spec.env_var}={env_path}")
         if hit:
             _RESOLVE_CACHE[key] = hit
             return hit
@@ -101,9 +107,14 @@ def resolve_binary(
         return hit
 
     # 4. commandants-managed install
-    from ..install import managed_bin_dir  # local import avoids an import cycle
+    if spec.name == "ants":
+        from ..install import managed_bin_dir
 
-    managed = managed_bin_dir()
+        managed = managed_bin_dir()
+    else:
+        from ..install import managed_elastix_bin_dir
+
+        managed = managed_elastix_bin_dir()
     if managed:
         hit = _candidate_in_dir(managed, name)
         tried.append(f"managed={managed}")
@@ -111,21 +122,28 @@ def resolve_binary(
             _RESOLVE_CACHE[key] = hit
             return hit
 
-    # Opt-in: download the managed binaries and try once more.
+    # 5. opt-in: download the managed binaries and try once more.
     if _auto_install_enabled(auto_install):
-        from ..install import install_ants
+        if spec.name == "ants":
+            from ..install import install_ants
 
-        bindir = install_ants()
+            bindir = install_ants()
+        else:
+            from ..install import install_elastix
+
+            bindir = install_elastix()
         hit = _candidate_in_dir(bindir, name)
         if hit:
             _RESOLVE_CACHE[key] = hit
             return hit
 
+    install_cmd = "install-ants" if spec.name == "ants" else "install-elastix"
     raise AntsNotFoundError(
-        f"Could not find ANTs binary {name!r}. Searched: {', '.join(tried)}.\n"
+        f"Could not find {spec.progress_label} binary {name!r}. "
+        f"Searched: {', '.join(tried)}.\n"
         "Fix it by any of:\n"
-        "  * run `commandants install-ants` to download prebuilt ANTs binaries,\n"
-        "  * add ANTs to your PATH, or set ANTSPATH to its bin directory,\n"
+        f"  * run `commandants {install_cmd}` to download prebuilt binaries,\n"
+        f"  * add it to your PATH, or set {spec.env_var} to its bin directory,\n"
         "  * pass ants_path=... to the command,\n"
         "  * or set COMMANDANTS_AUTO_INSTALL=1 to download automatically."
     )

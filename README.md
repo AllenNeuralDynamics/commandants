@@ -329,15 +329,43 @@ N4BiasFieldCorrection(3, "raw.nii.gz", "n4.nii.gz",
                       bspline_distance=200).run()
 ```
 
+## elastix (benchmark against ANTs)
+
+commandants also wraps [elastix](https://elastix.dev/) (`elastix` + `transformix`)
+through the same core, so you can run both tools with one harness. elastix is
+configured by **parameter maps** (not flags), which commandants models as
+pass-through `ParameterMap`s plus curated presets:
+
+```python
+from commandants import elastix
+from commandants.core.executable import is_available
+
+# provision the binaries once (SimpleElastix doesn't ship the CLIs):
+#   commandants install-elastix
+reg = elastix.presets.affine("fixed.nii.gz", "moving.nii.gz", "out_dir")
+print(reg.to_shell())              # elastix -f ... -m ... -out out_dir -p <param0>
+result = reg.run(stream=True)      # writes out_dir/result.0.nii + TransformParameters.0.txt
+print(result.duration_seconds)     # wall-clock time, for benchmarking vs ANTs
+
+# apply the transform to another image:
+elastix.Transformix("out_dir/TransformParameters.0.txt", "warp_out",
+                    moving="other.nii.gz").run()
+```
+
+Parameter maps are fully editable (`elastix.ParameterMap` / `presets.parameter_map("rigid")`),
+round-trip elastix `.txt` files, and multiple maps become sequential `-p` stages.
+A worked comparison: [`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
+
 ## Design
 
 ```
 commandants/
   core/           binary resolution, the AntsCommand base, result objects
   registration/   AntsRegistration, metrics (incl. PSE/ICP/JHCT), transforms, stages, apply
+  elastix/        Elastix, Transformix, ParameterMap, presets (elastix backend)
   preprocessing/  N4BiasFieldCorrection, ThresholdImage, ImageMath, ResampleImage
   io/             point-set CSV + SimpleITK in-memory support
-  install.py      download/manage prebuilt ANTs binaries
+  install.py      download/manage prebuilt ANTs + elastix binaries (ToolSpec)
   __main__.py     the `commandants` CLI
 ```
 

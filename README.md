@@ -350,14 +350,43 @@ N4BiasFieldCorrection(
 commandants also wraps [elastix](https://elastix.dev/) (`elastix` + `transformix`)
 through the same core, so you can run both tools with one harness. elastix is
 configured by **parameter maps** (not flags), which commandants models as
-pass-through `ParameterMap`s plus curated presets:
+pass-through `ParameterMap`s plus curated presets.
+
+### Getting elastix binaries
+
+Exactly like ANTs: point `commandants` at an existing elastix (on `PATH`, via
+`$ELASTIXPATH`, or `elastix_path=...`), **or** let it fetch the official prebuilt
+binaries:
+
+```bash
+commandants install-elastix          # downloads official prebuilt elastix for your OS
+commandants version                  # -> ... / elastix version: 5.3.1
+commandants which elastix            # and: commandants which transformix
+```
+
+`install-elastix` downloads the matching archive from the
+[SuperElastix/elastix releases](https://github.com/SuperElastix/elastix/releases)
+(default `5.3.1`), unpacks it into a managed per-user directory (`commandants
+list --tool elastix` shows where), and grabs `transformix` alongside `elastix`.
+Resolution order mirrors ANTs — `elastix_path=` → `$ELASTIXPATH` → `PATH` →
+managed — so a system elastix still wins if present.
+
+> Unlike the ANTs CLI (and unlike the `SimpleElastix` Python package, which ships
+> no command-line tools), elastix ships **shared libraries** next to its binaries.
+> For a managed install, `commandants` records that `lib/` dir and injects it onto
+> the loader path (`LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH` / `PATH`) automatically
+> at run time. If you instead point at your own elastix via `$ELASTIXPATH`/`PATH`,
+> make sure its `lib/` is discoverable the way the official archive lays it out.
+
+`COMMANDANTS_AUTO_INSTALL=1` (or `auto_install=True`) opts elastix into the same
+fetch-on-first-use behavior; `commandants install-elastix --version latest`,
+`--asset <name>`, and `commandants uninstall-elastix` round out the CLI.
+
+### Usage
 
 ```python
 from commandants import elastix
-from commandants.core.executable import is_available
 
-# provision the binaries once (SimpleElastix doesn't ship the CLIs):
-#   commandants install-elastix
 reg = elastix.presets.affine("fixed.nii.gz", "moving.nii.gz", "out_dir")
 print(reg.to_shell())  # elastix -f ... -m ... -out out_dir -p <param0>
 result = reg.run(stream=True)  # writes out_dir/result.0.nii + TransformParameters.0.txt

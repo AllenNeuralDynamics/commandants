@@ -45,7 +45,29 @@ packages = ["src/commandants"]
 [dependency-groups]
 # Installed by `uv sync` (used by the galen-uv CI). Tooling + test-time image libs
 # so the SimpleITK-backed tests actually run in CI instead of importorskip-ing.
-dev = ["pytest>=7.0", "pytest-cov", "ruff", "SimpleITK>=2.2", "numpy>=1.21"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "ruff",
+    "interrogate",
+    "codespell",
+    "SimpleITK>=2.2",
+    "numpy>=1.21",
+]
+
+[tool.interrogate]
+# Docstring-coverage gate (galen-uv Quality job runs `interrogate -v`). Adopts the
+# AllenNeuralDynamics baseline: boilerplate (inits, dunders, modules) is exempt and the
+# floor starts at 30% -- a real, ratchet-upward bar rather than the tool's default 80%.
+ignore-init-method = true
+ignore-magic = true
+ignore_module = true
+fail-under = 30
+exclude = ["__init__.py", "tests", "examples", "build", "scratch", ".venv"]
+
+[tool.codespell]
+skip = ".git,*.pdf,*.svg,uv.lock,scratch,.venv"
+ignore-words-list = "nd"
 
 [tool.ruff]
 line-length = 120

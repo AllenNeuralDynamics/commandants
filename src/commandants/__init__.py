@@ -19,7 +19,7 @@ Quickstart
 
 from __future__ import annotations
 
-from . import elastix, presets
+from . import benchmark, elastix, presets
 from .core import (
     AntsCommand,
     AntsNotFoundError,
@@ -131,6 +131,8 @@ __all__ = [
     "synonly",
     "ccf_global",
     "ccf_stpt",
+    # cross-backend benchmarking
+    "benchmark",
     # in-memory images + point I/O
     "TempWorkspace",
     "is_sitk_image",

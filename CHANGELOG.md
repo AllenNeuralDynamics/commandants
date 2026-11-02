@@ -8,6 +8,15 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **Cross-backend benchmark harness** (`commandants.benchmark`): `compare()` registers the
+  same image pair with several backends and returns machine-readable trials
+  (`BenchmarkReport.summary()` / `to_table()` / `to_csv()`). A `Backend` adapter normalizes
+  the genuinely different builder signatures and result shapes (ANTs transform-prefix +
+  `expected_transforms()` vs elastix output-directory + `declared_outputs()`) into a uniform
+  `{warped, transforms, log}`. Adds fairness controls — pinned threads, streaming forced off,
+  equalized warped-image format, per-backend failure isolation, and `warmup`/`repeats`.
+  New backends register with one `register_backend()` call.
+
 - **ANTs STPT/CCF analogue presets** (`commandants.presets`): `ccf_stpt` (Rigid →
   Affine Mattes MI, 64 bins → `BSplineSyN` cross-correlation) and `ccf_global` (linear
   only), the ANTs counterpart to the elastix `ccf_stpt` preset. Uses `BSplineSyN` — ANTs'

@@ -432,6 +432,48 @@ schedule — rigid → affine Mattes MI (64 bins, center-of-gravity init, coarse
 shrink 8) → 3rd-order B-spline NCC over a 4-level grid. (The original deformable step uses a
 discrete MRF optimizer, so the B-spline stage matches in spirit, not mechanism.)
 
+## Benchmarking backends against each other
+
+Register the **same image pair** with several backends and compare timings:
+
+```python
+from commandants import benchmark
+
+report = benchmark.compare(
+    "fixed.nii.gz",
+    "moving.nii.gz",
+    "bench_out",
+    backends=("ants", "elastix"),
+    preset="affine",
+    threads=8,
+    repeats=3,
+    warmup=1,
+)
+print(report.to_table())
+report.to_csv("bench.csv")
+```
+
+```
+backend      runs   best(s)  median(s)   mean(s)
+------------------------------------------------
+ants            3      0.54       0.58      0.57
+elastix         3      0.98       0.99      1.02
+```
+
+Timing is already apples-to-apples — every backend subclasses `AntsCommand` and shares one
+`run()` path that times **only** the subprocess (image materialization and output bookkeeping
+happen outside the timed window). The harness adds the fairness around it: threads are pinned
+identically, streaming is forced off (it would penalize the chattier tool), the warped-image
+format is equalized so compression cost matches, failures are isolated per backend, and
+`warmup`/`repeats` absorb page-cache effects.
+
+It also **normalizes the output shapes**, which genuinely differ — ANTs takes a transform
+prefix and exposes transform names only via `expected_transforms()`, while elastix takes an
+output directory and declares everything. Each trial gives you `warped` + `transforms` at
+predictable paths, so you can compute your own accuracy metrics. Adding a backend is one
+`benchmark.register_backend(...)` call. Worked example:
+[`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
+
 ## Design
 
 ```
@@ -441,6 +483,7 @@ commandants/
   elastix/        Elastix, Transformix, ParameterMap, presets (elastix backend)
   preprocessing/  N4BiasFieldCorrection, ThresholdImage, ImageMath, ResampleImage
   io/             point-set CSV + SimpleITK in-memory support
+  benchmark.py    cross-backend comparison harness (Backend adapters + compare())
   install.py      download/manage prebuilt ANTs + elastix binaries (ToolSpec)
   __main__.py     the `commandants` CLI
 ```

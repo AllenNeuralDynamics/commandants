@@ -1,68 +1,92 @@
-"""Benchmark elastix against ANTs through the same commandants machinery.
+"""Benchmark every available registration backend on the same image pair.
 
-Runs an affine registration with each backend on the same (synthetic) image pair
-and reports wall-clock time (``result.duration_seconds``) and the output paths --
-apples-to-apples, since both go through the same run/measurement code. If a backend
-isn't installed, its command is printed instead of run.
+Registers one (synthetic, or your own) image pair with each backend registered in
+``commandants.benchmark`` -- ANTs and elastix today, plus any others that have been
+added -- and reports wall-clock time with normalized output paths.
 
-Accuracy analysis (Dice on labels, landmark error, ...) is your science and is out
-of scope for the wrapper -- this just gives you the harness + timing.
+The comparison is apples-to-apples because every backend goes through the same
+``run()`` path (so timing is measured identically), and the harness additionally pins
+threads, disables streaming, equalizes the warped-image format, and isolates failures
+so one missing tool can't discard the others' numbers.
 
-    python examples/benchmark_elastix_vs_ants.py
+Accuracy analysis (Dice on labels, landmark error, ...) is your science and is out of
+scope here -- the harness just hands you each backend's warped image and transforms at
+predictable paths so you can score them yourself.
+
+    python examples/benchmark_elastix_vs_ants.py [fixed.nii.gz] [moving.nii.gz]
 """
 
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 
-import numpy as np
-import SimpleITK as sitk
-
-import commandants as cants
-from commandants import elastix
-from commandants.core.executable import is_available
+from commandants import benchmark
 
 
-def _blob(shift: int = 0) -> sitk.Image:
-    a = np.zeros((64, 64, 64), np.float32)
-    a[16 + shift : 40 + shift, 16 + shift : 40 + shift, 16:40] = 100.0
-    return sitk.GetImageFromArray(a)
+def synth_pair(workdir: str) -> tuple[str, str]:
+    """Write a tiny synthetic fixed/moving pair (needs the [io] extra)."""
+    try:
+        import numpy as np
+        import SimpleITK as sitk
+    except ImportError:  # pragma: no cover
+        sys.exit(
+            "No input images given and SimpleITK/numpy aren't installed.\n"
+            "Pass real files:  python examples/benchmark_elastix_vs_ants.py fixed.nii.gz moving.nii.gz\n"
+            "or:               pip install 'commandants[io]'"
+        )
+
+    def blob(shift: int):
+        a = np.zeros((64, 64, 64), np.float32)
+        a[16 + shift : 40 + shift, 16 + shift : 40 + shift, 16:40] = 100.0
+        return sitk.GetImageFromArray(a)
+
+    fixed = os.path.join(workdir, "fixed.nii.gz")
+    moving = os.path.join(workdir, "moving.nii.gz")
+    sitk.WriteImage(blob(0), fixed)
+    sitk.WriteImage(blob(6), moving)
+    return fixed, moving
 
 
 def main() -> None:
-    d = tempfile.mkdtemp(prefix="bench_")
-    fixed = os.path.join(d, "fixed.nii.gz")
-    sitk.WriteImage(_blob(0), fixed)
-    moving = os.path.join(d, "moving.nii.gz")
-    sitk.WriteImage(_blob(6), moving)
-
-    # --- ANTs affine ------------------------------------------------------
-    ants_out = os.path.join(d, "ants_")
-    ants_reg = cants.presets.affine(fixed, moving, ants_out, warped_output=ants_out + "warped.nii.gz")
-    print("=" * 66, "\nANTs affine\n", "=" * 66, sep="")
-    if is_available("antsRegistration"):
-        r = ants_reg.run()
-        print(f"  returncode={r.returncode}  time={r.duration_seconds:.2f}s")
-        print(f"  warped: {r.outputs.get('warped')}")
+    out = tempfile.mkdtemp(prefix="bench_")
+    if len(sys.argv) >= 3:
+        fixed, moving = sys.argv[1], sys.argv[2]
     else:
-        print("  (ANTs not installed -- command:)")
-        print("  " + ants_reg.to_shell())
+        print("No input images given -- synthesizing a tiny pair.")
+        fixed, moving = synth_pair(out)
 
-    # --- elastix affine ---------------------------------------------------
-    el_out = os.path.join(d, "elastix_out")
-    el_reg = elastix.presets.affine(fixed, moving, el_out)
-    print("\n" + "=" * 66, "\nelastix affine\n", "=" * 66, sep="")
-    if is_available("elastix"):
-        r = el_reg.run()
-        print(f"  returncode={r.returncode}  time={r.duration_seconds:.2f}s")
-        print(f"  warped: {r.outputs.get('warped')}")
-        print(f"  transform: {r.outputs.get('transform')}")
-    else:
-        print("  (elastix not installed -- run `commandants install-elastix`; command:)")
-        print("  " + el_reg.to_shell())
+    known = sorted(benchmark.BACKENDS)
+    available = benchmark.available_backends()
+    print(f"registered backends: {known}")
+    print(f"available right now: {available or '(none -- install ANTs and/or elastix)'}")
+    if not available:
+        return
 
-    print(f"\noutputs under: {d}")
+    # warmup absorbs page-cache / binary-load effects; threads are pinned for fairness.
+    report = benchmark.compare(
+        fixed,
+        moving,
+        os.path.join(out, "results"),
+        backends=known,
+        preset="affine",
+        threads=4,
+        repeats=3,
+        warmup=1,
+    )
+
+    print("\n" + report.to_table())
+
+    print("\nper-trial outputs:")
+    for trial in report.timed():
+        print(f"  [{trial.backend}] {trial.duration_seconds:.2f}s -> {trial.warped}")
+        for path in trial.transforms:
+            print(f"      transform: {path}")
+
+    csv_path = report.to_csv(os.path.join(out, "benchmark.csv"))
+    print(f"\nrows written to: {csv_path}")
+    print(f"outputs under:   {out}")
 
 
 if __name__ == "__main__":

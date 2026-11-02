@@ -8,6 +8,13 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **STPT/CCF backend scaffolding** (`commandants.stpt`): binary resolution for the
+  user-built Allen `idp*` / `stpt_register` binaries via `$STPTPATH` + `PATH`, and a shared
+  `StptToolCommand` base. `ToolSpec` gained `downloadable` / `install_command`, so an
+  install-less tool is expressible: `spec_for_binary` is now a table lookup and
+  `resolve_binary` is spec-driven rather than branching on ANTs-vs-elastix. Install-less
+  tools never attempt an auto-download and their not-found message omits `install-*`.
+  `commandants version` reports STPT availability. The ANTs and elastix paths are unchanged.
 - **Cross-backend benchmark harness** (`commandants.benchmark`): `compare()` registers the
   same image pair with several backends and returns machine-readable trials
   (`BenchmarkReport.summary()` / `to_table()` / `to_csv()`). A `Backend` adapter normalizes

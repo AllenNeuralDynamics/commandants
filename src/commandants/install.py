@@ -54,7 +54,7 @@ _LINUX_PREFERENCE = [
 class ToolSpec:
     """Everything provisioning/resolution needs to know about one tool."""
 
-    name: str  # "ants" | "elastix"
+    name: str  # "ants" | "elastix" | "stpt"
     repo: str  # GitHub "owner/repo"
     managed_subdir: str  # subdir under user_data_dir()
     marker_binaries: frozenset  # e.g. {"antsRegistration", "antsRegistration.exe"}
@@ -62,8 +62,11 @@ class ToolSpec:
     default_version: str
     needs_lib_path: bool  # elastix bundles a lib/ that must be on the loader path
     match_asset: Callable[..., str]
-    progress_label: str  # "ANTs" | "elastix"
+    progress_label: str  # "ANTs" | "elastix" | "STPT"
     tag_prefix: str = ""  # "v" for ANTs tags, "" for bare elastix tags
+    # Install-less tools (no public release) are resolved from $ENV_VAR/PATH only.
+    downloadable: bool = True
+    install_command: Optional[str] = None  # `commandants <cmd>`, when one exists
 
     def tag(self, version: str) -> str:
         return f"{self.tag_prefix}{version.lstrip('v')}"
@@ -435,6 +438,7 @@ ANTS_SPEC = ToolSpec(
     match_asset=select_asset,
     progress_label="ANTs",
     tag_prefix="v",
+    install_command="install-ants",
 )
 
 ELASTIX_SPEC = ToolSpec(
@@ -448,14 +452,80 @@ ELASTIX_SPEC = ToolSpec(
     match_asset=select_elastix_asset,
     progress_label="elastix",
     tag_prefix="",
+    install_command="install-elastix",
+)
+
+
+def _no_asset(*_args, **_kwargs) -> str:
+    """match_asset for tools with no downloadable release."""
+    raise CommandantsError("This tool has no downloadable release; build or install it yourself.")
+
+
+STPT_SPEC = ToolSpec(
+    name="stpt",
+    repo="",  # the Allen STPT/CCF binaries are built by the user; nothing to fetch
+    managed_subdir="stpt",
+    marker_binaries=frozenset(),
+    env_var="STPTPATH",
+    default_version="",
+    needs_lib_path=False,
+    match_asset=_no_asset,
+    progress_label="STPT",
+    downloadable=False,
 )
 
 _ELASTIX_BINARIES = frozenset({"elastix", "elastix.exe", "transformix", "transformix.exe"})
 
+_STPT_BINARIES = frozenset(
+    {
+        # The Allen "idp" (Informatics Data Processing) pipeline modules.
+        "idpProjectionAlignmentModule",
+        "idpProjectionAlignmentModule.exe",
+        "idpProjectionLocalAlignmentModule",
+        "idpProjectionLocalAlignmentModule.exe",
+        "idpProjectionResampleVolumeRGBModule",
+        "idpProjectionResampleVolumeRGBModule.exe",
+        # A thin two-volume driver built from the same registration classes.
+        "stpt_register",
+        "stpt_register.exe",
+    }
+)
+
+#: binary basename -> owning spec. Anything unknown is assumed to be ANTs.
+_SPEC_BY_BINARY = {name: ELASTIX_SPEC for name in _ELASTIX_BINARIES}
+_SPEC_BY_BINARY.update({name: STPT_SPEC for name in _STPT_BINARIES})
+
 
 def spec_for_binary(name: str) -> "ToolSpec":
-    """Return the ToolSpec that owns a binary name (elastix/transformix → elastix)."""
-    return ELASTIX_SPEC if os.path.basename(str(name)) in _ELASTIX_BINARIES else ANTS_SPEC
+    """Return the ToolSpec that owns a binary name (default: ANTs)."""
+    return _SPEC_BY_BINARY.get(os.path.basename(str(name)), ANTS_SPEC)
+
+
+def managed_bin_dir_for(spec: "ToolSpec", version: Optional[str] = None) -> Optional[str]:
+    """Managed bin dir for any tool; None when the tool isn't commandants-managed.
+
+    Dispatches to the per-tool public helpers so they stay monkeypatchable.
+    """
+    if not spec.downloadable:
+        return None
+    if spec is ANTS_SPEC:
+        return managed_bin_dir(version)
+    if spec is ELASTIX_SPEC:
+        return managed_elastix_bin_dir(version)
+    return _managed_bin_dir(spec, version)
+
+
+def install_for(spec: "ToolSpec") -> str:
+    """Download+install any downloadable tool; raises for install-less tools."""
+    if not spec.downloadable:
+        raise CommandantsError(
+            f"{spec.progress_label} has no downloadable release; build the binaries yourself and set ${spec.env_var}."
+        )
+    if spec is ANTS_SPEC:
+        return install_ants()
+    if spec is ELASTIX_SPEC:
+        return install_elastix()
+    return _install(spec, spec.default_version, None, None, False, False)
 
 
 __all__ = [
@@ -464,7 +534,10 @@ __all__ = [
     "ToolSpec",
     "ANTS_SPEC",
     "ELASTIX_SPEC",
+    "STPT_SPEC",
     "spec_for_binary",
+    "managed_bin_dir_for",
+    "install_for",
     # ANTs
     "install_ants",
     "uninstall_ants",

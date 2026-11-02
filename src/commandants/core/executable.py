@@ -105,15 +105,10 @@ def resolve_binary(
         _RESOLVE_CACHE[key] = hit
         return hit
 
-    # 4. commandants-managed install
-    if spec.name == "ants":
-        from ..install import managed_bin_dir
+    # 4. commandants-managed install (None for tools commandants cannot provision)
+    from ..install import managed_bin_dir_for
 
-        managed = managed_bin_dir()
-    else:
-        from ..install import managed_elastix_bin_dir
-
-        managed = managed_elastix_bin_dir()
+    managed = managed_bin_dir_for(spec)
     if managed:
         hit = _candidate_in_dir(managed, name)
         tried.append(f"managed={managed}")
@@ -122,29 +117,29 @@ def resolve_binary(
             return hit
 
     # 5. opt-in: download the managed binaries and try once more.
-    if _auto_install_enabled(auto_install):
-        if spec.name == "ants":
-            from ..install import install_ants
+    if spec.downloadable and _auto_install_enabled(auto_install):
+        from ..install import install_for
 
-            bindir = install_ants()
-        else:
-            from ..install import install_elastix
-
-            bindir = install_elastix()
+        bindir = install_for(spec)
         hit = _candidate_in_dir(bindir, name)
         if hit:
             _RESOLVE_CACHE[key] = hit
             return hit
 
-    install_cmd = "install-ants" if spec.name == "ants" else "install-elastix"
+    # Install-less tools (user-built binaries) get no `run install-x` advice.
+    fixes = []
+    if spec.install_command:
+        fixes.append(f"  * run `commandants {spec.install_command}` to download prebuilt binaries,")
+    fixes.append(f"  * add it to your PATH, or set {spec.env_var} to its bin directory,")
+    fixes.append("  * pass ants_path=... to the command,")
+    if spec.downloadable:
+        fixes.append("  * or set COMMANDANTS_AUTO_INSTALL=1 to download automatically.")
+    if fixes[-1].endswith(","):
+        fixes[-1] = fixes[-1][:-1] + "."
     raise AntsNotFoundError(
         f"Could not find {spec.progress_label} binary {name!r}. "
         f"Searched: {', '.join(tried)}.\n"
-        "Fix it by any of:\n"
-        f"  * run `commandants {install_cmd}` to download prebuilt binaries,\n"
-        f"  * add it to your PATH, or set {spec.env_var} to its bin directory,\n"
-        "  * pass ants_path=... to the command,\n"
-        "  * or set COMMANDANTS_AUTO_INSTALL=1 to download automatically."
+        "Fix it by any of:\n" + "\n".join(fixes)
     )
 
 

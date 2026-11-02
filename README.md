@@ -481,10 +481,11 @@ commandants/
   core/           binary resolution, the AntsCommand base, result objects
   registration/   AntsRegistration, metrics (incl. PSE/ICP/JHCT), transforms, stages, apply
   elastix/        Elastix, Transformix, ParameterMap, presets (elastix backend)
+  stpt/           Allen STPT/CCF backend (user-built binaries; scaffolding)
   preprocessing/  N4BiasFieldCorrection, ThresholdImage, ImageMath, ResampleImage
   io/             point-set CSV + SimpleITK in-memory support
   benchmark.py    cross-backend comparison harness (Backend adapters + compare())
-  install.py      download/manage prebuilt ANTs + elastix binaries (ToolSpec)
+  install.py      download/manage prebuilt ANTs + elastix binaries (ToolSpec table)
   __main__.py     the `commandants` CLI
 ```
 

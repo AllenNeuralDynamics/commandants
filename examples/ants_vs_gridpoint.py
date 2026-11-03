@@ -100,7 +100,16 @@ ants_reg = presets.ccf_stpt(
     warped_output=os.path.join(ANTS_DIR, "ants_warped.nii.gz"),
     verbose=True,
 )
-grid_reg = stpt_presets.ccf_stpt(fixed_path, moving_path, GRID_DIR, verbose=True)
+# write_deformation_field is opt-in on this side: ANTs writes its numbered transform
+# files whether you ask or not, gridpoint writes only the warped image unless told
+# otherwise. Asking for it makes the two backends produce comparable artifacts.
+grid_reg = stpt_presets.ccf_stpt(
+    fixed_path,
+    moving_path,
+    GRID_DIR,
+    write_deformation_field=True,
+    verbose=True,
+)
 
 # Always worth a look before a long run -- this is the literal command line.
 print("\n--- ANTs ---\n", ants_reg.to_shell(), sep="")

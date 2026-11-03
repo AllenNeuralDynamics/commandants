@@ -507,6 +507,11 @@ predictable paths, so you can compute your own accuracy metrics. Adding a backen
 `benchmark.register_backend(...)` call. Worked example:
 [`examples/benchmark_elastix_vs_ants.py`](examples/benchmark_elastix_vs_ants.py).
 
+If you want the comparison without the harness,
+[`examples/ants_vs_gridpoint.py`](examples/ants_vs_gridpoint.py) does the same thing by
+hand — build, inspect, run, score — as `# %%` cells you can open as a notebook or run as a
+script.
+
 ## Design
 
 ```

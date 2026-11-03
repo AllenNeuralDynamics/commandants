@@ -88,17 +88,26 @@ if [ -n "${GITHUB_TOKEN:-}" ]; then
   GRIDPOINT_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GRIDPOINT_ORG_REPO}.git"
 fi
 
-STPTPATH=""
-if git clone --depth 1 "${GRIDPOINT_URL}" /tmp/gridpoint 2>/dev/null; then
-  cmake -S /tmp/gridpoint -B /tmp/gridpoint/build -DCMAKE_BUILD_TYPE=Release
-  cmake --build /tmp/gridpoint/build -- -j"$(nproc)"
+# Run the whole clone-configure-build in a subshell used as an `if` condition, so a
+# gridpoint failure degrades to a two-backend capsule instead of destroying the image
+# along with the ANTs and elastix installs that already succeeded. Chained with && so
+# this does not depend on how `set -e` propagates into a condition.
+build_gridpoint() (
+  git clone --depth 1 "${GRIDPOINT_URL}" /tmp/gridpoint &&
+  cmake -S /tmp/gridpoint -B /tmp/gridpoint/build -DCMAKE_BUILD_TYPE=Release &&
+  cmake --build /tmp/gridpoint/build -- -j"$(nproc)" &&
   install -Dm755 /tmp/gridpoint/build/gridpoint "${PREFIX}/bin/gridpoint"
+)
+
+STPTPATH=""
+if build_gridpoint; then
   rm -rf /tmp/gridpoint
   STPTPATH="${PREFIX}/bin"
   echo "gridpoint built -> ${STPTPATH}/gridpoint"
 else
-  echo "WARNING: could not clone ${GRIDPOINT_ORG_REPO} (it is private)."
-  echo "         Set GITHUB_TOKEN as a capsule secret, or make the repo public."
+  echo "WARNING: gridpoint was not installed; see the error above."
+  echo "         A clone failure is almost always auth: the repo is private, so set"
+  echo "         GITHUB_TOKEN as a capsule secret or make the repo public."
   echo "         Continuing with the ANTs and elastix backends only."
 fi
 

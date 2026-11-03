@@ -453,10 +453,12 @@ SimpleITK images work anywhere a path does, exactly as with the ANTs and elastix
 previews render them as `<sitk:...>` placeholders, runs materialize them to temp files, and
 `result.workspace.inputs` tells you where each one went.
 
-> **Binary.** This drives `stpt_register`, a minimal ITK-only driver built from a **separate,
+> **Binary.** This drives `gridpoint`, a minimal ITK-only driver built from a **separate,
 > Allen-licensed repository** -- the upstream code is BSD-2 *plus a non-commercial clause*, so it
 > is not vendored into this MIT package; commandants only invokes the binary. Put it on `PATH` or
-> set `$STPTPATH`. There is no download, hence no `install-stpt`.
+> set `$STPTPATH`. There is no download, hence no `install-stpt`. The driver is named
+> *gridpoint* because the discrete MRF labels displacements at B-spline grid points --
+> and because the upstream Allen namespace, `idp`, is spelled inside that word.
 >
 > The upstream `idpProjection*` modules are **not** driven directly: they cannot register two 3D
 > volumes at all, assembling a volume slice-by-slice from one 2D file per `<sub-image>` with the

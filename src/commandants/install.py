@@ -486,6 +486,9 @@ _STPT_BINARIES = frozenset(
         "idpProjectionResampleVolumeRGBModule",
         "idpProjectionResampleVolumeRGBModule.exe",
         # A thin two-volume driver built from the same registration classes.
+        "gridpoint",
+        "gridpoint.exe",
+        # Pre-rename alias, still recognized so older builds keep resolving.
         "stpt_register",
         "stpt_register.exe",
     }

@@ -9,14 +9,14 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 ### Features
 
 - **STPT/CCF backend scaffolding** (`commandants.stpt`): binary resolution for the
-  user-built Allen `idp*` / `stpt_register` binaries via `$STPTPATH` + `PATH`, and a shared
+  user-built Allen `idp*` / `gridpoint` binaries via `$STPTPATH` + `PATH`, and a shared
   `StptToolCommand` base. `ToolSpec` gained `downloadable` / `install_command`, so an
   install-less tool is expressible: `spec_for_binary` is now a table lookup and
   `resolve_binary` is spec-driven rather than branching on ANTs-vs-elastix. Install-less
   tools never attempt an auto-download and their not-found message omits `install-*`.
   `commandants version` reports STPT availability. The ANTs and elastix paths are unchanged.
 - **Allen STPT/CCF wrapper** (`commandants.stpt`): `StptRegistration` plus
-  `presets.rigid/affine/ccf_global/ccf_stpt`, driving the `stpt_register` ITK-only driver
+  `presets.rigid/affine/ccf_global/ccf_stpt`, driving the `gridpoint` ITK-only driver
   (built from a separate Allen-licensed repo; the upstream code is BSD-2 + non-commercial, so
   it is not vendored here). Full commandants ergonomics -- `to_shell()` preview, `run()`,
   declared outputs, `extra_args()`, and SimpleITK images anywhere a path is accepted. Registered

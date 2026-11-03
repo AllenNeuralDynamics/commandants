@@ -12,7 +12,7 @@ composed into an invertible field)::
     result = reg.run()
     warped = result.load("warped")     # -> SimpleITK.Image
 
-It drives ``stpt_register``, a minimal ITK-only driver built from a separate,
+It drives ``gridpoint``, a minimal ITK-only driver built from a separate,
 Allen-licensed repository (the upstream code is BSD-2 **plus a non-commercial clause**,
 so it is not vendored into this MIT package -- commandants only invokes the binary).
 Resolve it with ``$STPTPATH`` or ``PATH``; there is no download, so no ``install-stpt``.

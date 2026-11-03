@@ -1,4 +1,4 @@
-"""Allen STPT/CCF integration tests -- skipped unless the `stpt_register` driver is built.
+"""Allen STPT/CCF integration tests -- skipped unless the `gridpoint` driver is built.
 
 These actually invoke the driver on tiny synthetic volumes. Build it from the separate
 Allen-licensed driver repo and put it on PATH or $STPTPATH to enable them.
@@ -14,8 +14,8 @@ from commandants import benchmark, stpt
 from commandants.core.executable import is_available
 
 pytestmark = pytest.mark.skipif(
-    not is_available("stpt_register"),
-    reason="stpt_register not found (PATH/STPTPATH); skipping integration tests.",
+    not is_available("gridpoint"),
+    reason="gridpoint not found (PATH/STPTPATH); skipping integration tests.",
 )
 
 sitk = pytest.importorskip("SimpleITK")
@@ -34,7 +34,7 @@ def _supports_deformable() -> bool:
 
     try:
         proc = subprocess.run(
-            [resolve_binary("stpt_register"), "-f", "x", "-m", "y", "-o", "z", "--stages", "deformable"],
+            [resolve_binary("gridpoint"), "-f", "x", "-m", "y", "-o", "z", "--stages", "deformable"],
             capture_output=True,
             text=True,
         )
@@ -45,7 +45,7 @@ def _supports_deformable() -> bool:
 
 needs_deformable = pytest.mark.skipif(
     not _supports_deformable(),
-    reason="this stpt_register build has no deformable stage (linear milestone).",
+    reason="this gridpoint build has no deformable stage (linear milestone).",
 )
 
 

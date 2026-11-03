@@ -1,6 +1,6 @@
 """Allen STPT/CCF wrapper: argv, declared outputs, presets, and SimpleITK handling.
 
-None of this needs the `stpt_register` binary -- build_command() never resolves it.
+None of this needs the `gridpoint` binary -- build_command() never resolves it.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from commandants.stpt import StptRegistration
 
 def test_minimal_argv():
     argv = StptRegistration("f.nii", "m.nii", "out").build_command()
-    assert argv[0] == "stpt_register"
+    assert argv[0] == "gridpoint"
     assert argv[argv.index("-f") + 1] == "f.nii"
     assert argv[argv.index("-m") + 1] == "m.nii"
     assert argv[argv.index("-o") + 1] == "out"
@@ -152,7 +152,7 @@ def test_registered_as_a_benchmark_backend():
     import inspect
 
     backend = benchmark.BACKENDS["stpt"]
-    assert backend.binary == "stpt_register"
+    assert backend.binary == "gridpoint"
     # Part of the default three-way comparison.
     default_backends = inspect.signature(benchmark.compare).parameters["backends"].default
     assert "stpt" in default_backends

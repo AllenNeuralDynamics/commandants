@@ -1,6 +1,6 @@
 """Allen STPT/CCF registration wrapper.
 
-Drives the ``stpt_register`` driver -- a minimal ITK-only executable that exposes the
+Drives the ``gridpoint`` driver -- a minimal ITK-only executable that exposes the
 Allen registration algorithm (MI rigid -> MI affine -> discrete symmetric B-spline MRF)
 for two arbitrary 3D volumes. The driver is built from a separate, Allen-licensed repo;
 commandants only invokes it. See :mod:`commandants.stpt` for why the upstream pipeline
@@ -26,7 +26,7 @@ STAGES = ("rigid", "affine", "deformable")
 
 
 class StptRegistration(StptToolCommand):
-    """Builder for a ``stpt_register`` invocation.
+    """Builder for a ``gridpoint`` invocation.
 
     Parameters
     ----------
@@ -57,10 +57,10 @@ class StptRegistration(StptToolCommand):
     verbose:
         Verbose driver output.
     stpt_path:
-        Explicit directory containing the ``stpt_register`` binary.
+        Explicit directory containing the ``gridpoint`` binary.
     """
 
-    binary_name = "stpt_register"
+    binary_name = "gridpoint"
 
     def __init__(
         self,
@@ -89,7 +89,7 @@ class StptRegistration(StptToolCommand):
         if unknown:
             raise ValueError(f"Unknown stage(s) {unknown}; use any of {list(STAGES)}.")
         if not stages:
-            raise ValueError("stpt_register needs at least one stage.")
+            raise ValueError("gridpoint needs at least one stage.")
         self.fixed = fixed
         self.moving = moving
         self.out_dir = out_dir

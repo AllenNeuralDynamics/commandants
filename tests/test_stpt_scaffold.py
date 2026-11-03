@@ -29,8 +29,9 @@ def _clear_cache():
         "idpProjectionAlignmentModule",
         "idpProjectionLocalAlignmentModule",
         "idpProjectionResampleVolumeRGBModule",
+        "gridpoint",
+        "gridpoint.exe",
         "stpt_register",
-        "stpt_register.exe",
     ],
 )
 def test_stpt_binaries_route_to_the_stpt_spec(binary):
@@ -66,7 +67,7 @@ def test_resolve_stpt_uses_env_var(monkeypatch):
     monkeypatch.setattr(executable.shutil, "which", lambda n, path=None: None)
     monkeypatch.setenv("STPTPATH", "/stpt/bin")
     monkeypatch.setattr(executable, "_candidate_in_dir", lambda d, n: f"{d}/{n}" if str(d) == "/stpt/bin" else None)
-    assert executable.resolve_binary("stpt_register") == "/stpt/bin/stpt_register"
+    assert executable.resolve_binary("gridpoint") == "/stpt/bin/gridpoint"
 
 
 def test_install_less_not_found_message(monkeypatch):
@@ -92,11 +93,11 @@ def test_auto_install_is_never_attempted_for_install_less_tools(monkeypatch):
 
     monkeypatch.setattr(install, "install_for", explode)
     with pytest.raises(AntsNotFoundError):
-        executable.resolve_binary("stpt_register")
+        executable.resolve_binary("gridpoint")
 
 
 class _Dummy(StptToolCommand):
-    binary_name = "stpt_register"
+    binary_name = "gridpoint"
 
     def __init__(self, out_dir):
         super().__init__()

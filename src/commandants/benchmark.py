@@ -201,7 +201,7 @@ def _normalize_stpt(command: AntsCommand, result: CompletedAnts) -> dict:  # noq
 BACKENDS: dict[str, Backend] = {
     "ants": Backend("ants", "antsRegistration", _build_ants, _normalize_ants),
     "elastix": Backend("elastix", "elastix", _build_elastix, _normalize_elastix),
-    "stpt": Backend("stpt", "stpt_register", _build_stpt, _normalize_stpt),
+    "stpt": Backend("stpt", "gridpoint", _build_stpt, _normalize_stpt),
 }
 
 

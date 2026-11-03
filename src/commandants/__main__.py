@@ -70,7 +70,7 @@ def _cmd_version(args: argparse.Namespace) -> int:
     else:
         print("elastix: not found (run `commandants install-elastix`)")
     # The Allen STPT/CCF binaries are user-built, so there is no install command to suggest.
-    stpt = next((b for b in ("stpt_register", "idpProjectionAlignmentModule") if is_available(b)), None)
+    stpt = next((b for b in ("gridpoint", "stpt_register", "idpProjectionAlignmentModule") if is_available(b)), None)
     if stpt:
         print(f"STPT: {stpt} found")
     else:

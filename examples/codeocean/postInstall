@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+#
+# Code Ocean post-install: commandants + all three registration backends.
+#
+#   * commandants  -- installed from main (0.4.0 is not released yet)
+#   * ANTs         -- official prebuilt binaries, fetched by commandants
+#   * elastix      -- official prebuilt binaries, fetched by commandants
+#   * gridpoint    -- the Allen STPT/CCF driver, built from source against ITK
+#
+# Runs as root during the image build. Drop it in the capsule's Environment pane
+# (or at environment/postInstall) and make it executable.
+#
+# REQUIREMENTS
+#   - Ubuntu 22.04 (jammy) or 24.04 (noble) base image. Those are the releases that
+#     ship libinsighttoolkit5-dev; gridpoint needs ITK 5. On 20.04 (focal) apt only
+#     has ITK 4 and this script will stop with a clear message.
+#   - gridpoint is a PRIVATE repo. Either make it public, or expose a token to the
+#     build as GITHUB_TOKEN (Code Ocean secret / environment variable). Without one
+#     the gridpoint step is skipped and the other two backends still work.
+#
+set -euo pipefail
+
+GRIDPOINT_ORG_REPO="AllenNeuralDynamics/gridpoint"
+COMMANDANTS_REF="${COMMANDANTS_REF:-main}"
+PREFIX=/opt/gridpoint
+PROFILE=/etc/profile.d/commandants.sh
+
+echo "=============================================================="
+echo " commandants + ANTs + elastix + gridpoint"
+echo "=============================================================="
+
+# --------------------------------------------------------------------------
+# 0. Check the base image can supply ITK 5
+# --------------------------------------------------------------------------
+. /etc/os-release
+echo "base image: ${PRETTY_NAME}"
+case "${VERSION_ID:-}" in
+  22.04|24.04) ;;
+  *)
+    echo "WARNING: libinsighttoolkit5-dev is packaged for Ubuntu 22.04 and 24.04."
+    echo "         On ${VERSION_ID:-unknown} the gridpoint build will probably fail."
+    echo "         Either switch the base image, or build ITK 5 from source."
+    ;;
+esac
+
+# --------------------------------------------------------------------------
+# 1. Build tooling and ITK (only gridpoint needs these; ANTs and elastix are
+#    downloaded as prebuilt binaries)
+# --------------------------------------------------------------------------
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends \
+    ca-certificates curl git unzip \
+    build-essential cmake \
+    libinsighttoolkit5-dev
+rm -rf /var/lib/apt/lists/*
+
+# --------------------------------------------------------------------------
+# 2. commandants (0.4.0 is unreleased -> install from the branch)
+#    [io] pulls in SimpleITK + numpy so you can pass images in memory.
+# --------------------------------------------------------------------------
+python3 -m pip install --no-cache-dir --upgrade pip
+python3 -m pip install --no-cache-dir \
+    "commandants[io] @ git+https://github.com/AllenNeuralDynamics/commandants.git@${COMMANDANTS_REF}"
+
+echo "commandants $(python3 -c 'import commandants; print(commandants.__version__)') installed"
+
+# --------------------------------------------------------------------------
+# 3. ANTs and elastix -- this is what commandants' provisioner is for.
+#    Installed into the default managed directory so commandants can find them
+#    itself; the exact paths are exported below so resolution never depends on
+#    which user or HOME the capsule runs as.
+# --------------------------------------------------------------------------
+commandants install-ants
+commandants install-elastix
+
+ANTSPATH="$(dirname "$(commandants which antsRegistration)")"
+ELASTIXPATH="$(dirname "$(commandants which elastix)")"
+# elastix ships shared libraries next to its binaries and will not start without
+# them on the loader path.
+ELASTIX_LIB="$(python3 -c 'from commandants.install import managed_elastix_lib_dir as f; print(f() or "")')"
+
+# --------------------------------------------------------------------------
+# 4. gridpoint -- built from source (no prebuilt binaries exist)
+# --------------------------------------------------------------------------
+GRIDPOINT_URL="https://github.com/${GRIDPOINT_ORG_REPO}.git"
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  GRIDPOINT_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GRIDPOINT_ORG_REPO}.git"
+fi
+
+STPTPATH=""
+if git clone --depth 1 "${GRIDPOINT_URL}" /tmp/gridpoint 2>/dev/null; then
+  cmake -S /tmp/gridpoint -B /tmp/gridpoint/build -DCMAKE_BUILD_TYPE=Release
+  cmake --build /tmp/gridpoint/build -- -j"$(nproc)"
+  install -Dm755 /tmp/gridpoint/build/gridpoint "${PREFIX}/bin/gridpoint"
+  rm -rf /tmp/gridpoint
+  STPTPATH="${PREFIX}/bin"
+  echo "gridpoint built -> ${STPTPATH}/gridpoint"
+else
+  echo "WARNING: could not clone ${GRIDPOINT_ORG_REPO} (it is private)."
+  echo "         Set GITHUB_TOKEN as a capsule secret, or make the repo public."
+  echo "         Continuing with the ANTs and elastix backends only."
+fi
+
+# --------------------------------------------------------------------------
+# 5. Make the backends discoverable at run time
+#
+#    commandants resolves a binary as: explicit path > $TOOLPATH > PATH > its own
+#    managed install. Exporting the three *PATH variables is the most robust of
+#    those, because it does not depend on HOME.
+#
+#    NOTE: /etc/profile.d is only sourced by login shells. Code Ocean's run script
+#    is not guaranteed to be one, so ALSO add these as capsule environment
+#    variables in the Environment pane, or `source` this file from /code/run.
+# --------------------------------------------------------------------------
+{
+  echo "# written by the commandants postInstall"
+  echo "export ANTSPATH=\"${ANTSPATH}\""
+  echo "export ELASTIXPATH=\"${ELASTIXPATH}\""
+  [ -n "${ELASTIX_LIB}" ] && echo "export LD_LIBRARY_PATH=\"${ELASTIX_LIB}:\${LD_LIBRARY_PATH:-}\""
+  [ -n "${STPTPATH}" ] && echo "export STPTPATH=\"${STPTPATH}\""
+} > "${PROFILE}"
+chmod 0644 "${PROFILE}"
+
+echo
+echo "wrote ${PROFILE}:"
+sed 's/^/    /' "${PROFILE}"
+
+# --------------------------------------------------------------------------
+# 6. Verify, and fail the build loudly if a backend is missing
+# --------------------------------------------------------------------------
+# shellcheck disable=SC1090
+. "${PROFILE}"
+
+echo
+echo "=============================================================="
+commandants version
+echo "--------------------------------------------------------------"
+commandants which antsRegistration
+commandants which elastix
+if [ -n "${STPTPATH}" ]; then commandants which gridpoint; fi
+
+python3 - <<'PY'
+import sys
+from commandants import benchmark
+available = benchmark.available_backends()
+print("benchmark backends available:", available)
+for required in ("ants", "elastix"):
+    if required not in available:
+        sys.exit("FATAL: backend %r did not install correctly" % required)
+if "stpt" not in available:
+    print("NOTE: the stpt backend is absent (gridpoint was not built).")
+PY
+
+echo "=============================================================="
+echo " done"
+echo "=============================================================="

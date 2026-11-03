@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Code Ocean capsule entry point.
+#
+# /etc/profile.d is only sourced by login shells, and this is not one, so pick up the
+# backend paths the postInstall wrote before doing anything else.
+set -euo pipefail
+
+if [ -f /etc/profile.d/commandants.sh ]; then
+  # shellcheck disable=SC1091
+  . /etc/profile.d/commandants.sh
+fi
+
+echo "ANTSPATH=${ANTSPATH:-<unset>}"
+echo "ELASTIXPATH=${ELASTIXPATH:-<unset>}"
+echo "STPTPATH=${STPTPATH:-<unset>}"
+echo
+
+commandants version
+echo
+
+exec python3 -u /code/run_benchmark.py "$@"

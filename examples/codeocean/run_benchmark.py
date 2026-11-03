@@ -27,6 +27,8 @@ RESULTS = Path("/results")
 PRESET = os.environ.get("PRESET", "affine")
 THREADS = int(os.environ.get("THREADS", "4"))
 REPEATS = int(os.environ.get("REPEATS", "1"))
+# BACKENDS=ants,stpt restricts the run; empty means every backend that resolved.
+WANTED = [name.strip() for name in os.environ.get("BACKENDS", "").split(",") if name.strip()]
 
 
 def find_pair():
@@ -95,6 +97,16 @@ def main() -> int:
     if not available:
         print("FATAL: no registration backend resolved. Check ANTSPATH/ELASTIXPATH/STPTPATH.")
         return 1
+
+    if WANTED:
+        missing = [name for name in WANTED if name not in available]
+        if missing:
+            # Asking for a backend that is not installed is a mistake worth stopping on,
+            # not something to quietly drop from the comparison.
+            print("FATAL: BACKENDS requested %s, which did not resolve." % missing)
+            return 1
+        available = WANTED
+    print("running                     :", available)
 
     if len(sys.argv) >= 3:
         fixed, moving = sys.argv[1], sys.argv[2]

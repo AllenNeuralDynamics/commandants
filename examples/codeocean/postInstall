@@ -22,7 +22,10 @@ set -euo pipefail
 
 GRIDPOINT_ORG_REPO="AllenNeuralDynamics/gridpoint"
 COMMANDANTS_REF="${COMMANDANTS_REF:-main}"
-PREFIX=/opt/gridpoint
+# /usr/local/bin is on PATH for every process -- including Jupyter kernels and any other
+# non-login shell, which never source /etc/profile.d. Installing there means gridpoint
+# resolves with no environment variable set at all.
+PREFIX=/usr/local
 PROFILE=/etc/profile.d/commandants.sh
 
 echo "=============================================================="
@@ -79,6 +82,15 @@ ELASTIXPATH="$(dirname "$(commandants which elastix)")"
 # elastix ships shared libraries next to its binaries and will not start without
 # them on the loader path.
 ELASTIX_LIB="$(python3 -c 'from commandants.install import managed_elastix_lib_dir as f; print(f() or "")')"
+
+# Register those libraries with the dynamic loader rather than relying on
+# LD_LIBRARY_PATH, for the same reason gridpoint goes in /usr/local/bin: a Jupyter
+# kernel inherits neither /etc/profile.d nor anything else a login shell would set.
+if [ -n "${ELASTIX_LIB}" ]; then
+  echo "${ELASTIX_LIB}" > /etc/ld.so.conf.d/commandants-elastix.conf
+  ldconfig
+  echo "registered elastix libraries with ldconfig: ${ELASTIX_LIB}"
+fi
 
 # --------------------------------------------------------------------------
 # 4. gridpoint -- built from source (no prebuilt binaries exist)

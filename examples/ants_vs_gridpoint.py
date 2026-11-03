@@ -59,8 +59,22 @@ def make_pair(n=96, seed=0):
     return fixed, moving
 
 
-if len(sys.argv) >= 3:
-    fixed_path, moving_path = sys.argv[1], sys.argv[2]
+def pair_from_argv():
+    """The two image paths from the command line, or None if there aren't any.
+
+    Deliberately not a ``len(sys.argv)`` check: a Jupyter kernel puts its own
+    ``-f /path/to/kernel-<id>.json`` in ``sys.argv``, so counting arguments silently
+    hands the flag to the registration as the fixed image.
+    """
+    candidates = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
+    if len(candidates) >= 2 and all(os.path.isfile(path) for path in candidates[:2]):
+        return candidates[0], candidates[1]
+    return None
+
+
+given = pair_from_argv()
+if given is not None:
+    fixed_path, moving_path = given
 else:
     print("no image pair given -- generating one")
     fixed_image, moving_image = make_pair()

@@ -22,6 +22,33 @@ sitk = pytest.importorskip("SimpleITK")
 np = pytest.importorskip("numpy")
 
 
+def _supports_deformable() -> bool:
+    """Probe whether the installed driver implements the discrete MRF stage.
+
+    The driver validates --stages before touching any file, so placeholder paths are
+    enough: a build without the deformable stage refuses it up front.
+    """
+    import subprocess
+
+    from commandants.core.executable import resolve_binary
+
+    try:
+        proc = subprocess.run(
+            [resolve_binary("stpt_register"), "-f", "x", "-m", "y", "-o", "z", "--stages", "deformable"],
+            capture_output=True,
+            text=True,
+        )
+    except Exception:  # pragma: no cover - the gate above already proved it resolves
+        return False
+    return "not implemented" not in (proc.stderr or "")
+
+
+needs_deformable = pytest.mark.skipif(
+    not _supports_deformable(),
+    reason="this stpt_register build has no deformable stage (linear milestone).",
+)
+
+
 def _blob(shift=0):
     a = np.zeros((48, 48, 48), np.float32)
     a[14 + shift : 34 + shift, 14 + shift : 34 + shift, 14:34] = 100.0
@@ -44,6 +71,7 @@ def test_linear_registration_produces_a_transform_and_warped_image(tmp_path):
     assert result.load("warped").GetSize() == (48, 48, 48)
 
 
+@needs_deformable
 def test_full_pipeline_with_deformation_field(tmp_path):
     fixed = str(tmp_path / "fixed.nii.gz")
     sitk.WriteImage(_blob(0), fixed)

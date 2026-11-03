@@ -94,9 +94,9 @@ class AntsApplyTransforms(AntsCommand):
             "--dimensionality",
             str(self.dimensionality),
             "--input",
-            self._resolve(self.input_image, "input"),
+            self._resolve(self.input_image, "input", must_exist=True),
             "--reference-image",
-            self._resolve(self.reference_image, "reference"),
+            self._resolve(self.reference_image, "reference", must_exist=True),
             "--output",
             str(self.output),
         ]
@@ -111,7 +111,7 @@ class AntsApplyTransforms(AntsCommand):
         if self.output_data_type is not None:
             args += ["--output-data-type", self.output_data_type]
         for i, (tx, invert) in enumerate(self._transforms):
-            path = self._resolve(tx, f"transform{i}")
+            path = self._resolve(tx, f"transform{i}", must_exist=True)
             args += ["--transform", bracket(path, True) if invert else path]
         args += ["--verbose", "1" if self.verbose else "0"]
         return args
@@ -162,7 +162,7 @@ class AntsApplyTransformsToPoints(AntsCommand):
             str(self.output_csv),
         ]
         for i, (tx, invert) in enumerate(self._transforms):
-            path = self._resolve(tx, f"transform{i}")
+            path = self._resolve(tx, f"transform{i}", must_exist=True)
             args += ["--transform", bracket(path, True) if invert else path]
         if self.precision is not None:
             args += ["--precision", str(self.precision)]

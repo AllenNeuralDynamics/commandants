@@ -87,18 +87,18 @@ class Elastix(ElastixToolCommand):
             raise ValueError("elastix needs at least one parameter map (-p).")
         args: List[str] = [
             "-f",
-            self._resolve(self.fixed, "fixed"),
+            self._resolve(self.fixed, "fixed", must_exist=True),
             "-m",
-            self._resolve(self.moving, "moving"),
+            self._resolve(self.moving, "moving", must_exist=True),
             "-out",
             str(self.out_dir),
         ]
         for i, pm in enumerate(self.param_maps):
             args += ["-p", self._resolve_param(pm, f"param{i}")]
         if self.fixed_mask is not None:
-            args += ["-fMask", self._resolve(self.fixed_mask, "fixed_mask")]
+            args += ["-fMask", self._resolve(self.fixed_mask, "fixed_mask", must_exist=True)]
         if self.moving_mask is not None:
-            args += ["-mMask", self._resolve(self.moving_mask, "moving_mask")]
+            args += ["-mMask", self._resolve(self.moving_mask, "moving_mask", must_exist=True)]
         if self.initial_transform is not None:
             args += ["-t0", self._resolve_param(self.initial_transform, "t0")]
         if self.threads is not None:

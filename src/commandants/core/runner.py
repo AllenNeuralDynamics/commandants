@@ -20,11 +20,11 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from ..io.materialize import TempWorkspace, is_sitk_image
-from .exceptions import AntsRuntimeError
+from .exceptions import AntsRuntimeError, MissingInputError
 from .executable import resolve_binary
 from .params import str_resolve
 
-Resolver = Callable[[Any, Optional[str]], str]
+Resolver = Callable[..., str]
 
 
 @dataclass
@@ -152,25 +152,40 @@ class AntsCommand:
             self._workspace = TempWorkspace(base=self._ws_base, keep=self._ws_keep)
         return self._workspace
 
-    def _resolver_for(self, materialize: bool) -> Resolver:
-        def resolve(value: Any, name: Optional[str] = None) -> str:
+    def _resolver_for(self, materialize: bool, validate: bool = False) -> Resolver:
+        def resolve(value: Any, name: Optional[str] = None, *, must_exist: bool = False) -> str:
             if is_sitk_image(value):
                 if not materialize:
                     # Preview mode: don't write files, show a readable placeholder.
                     return f"<sitk:{name or 'image'}>"
                 return self._ensure_workspace().materialize(value, name=name)
-            return str(value)
+            text = str(value)
+            # Only when a run is imminent. Assembling a command is not the same as
+            # launching one: callers legitimately build argv naming files they are
+            # about to create. Checking here keeps a bad path from reaching the tool,
+            # where it surfaces as an ITK exception that never names the parameter.
+            if must_exist and validate and not os.path.exists(text):
+                raise MissingInputError(
+                    f"{name or 'input'}: no such file or directory: {text!r}.\n"
+                    "Check the value you passed -- this path is handed straight to the tool."
+                )
+            return text
 
         return resolve
 
-    def _resolve(self, value: Any, name: str | None = None) -> str:
+    def _resolve(self, value: Any, name: str | None = None, *, must_exist: bool = False) -> str:
         """Resolve an argument that may be a path or an in-memory image.
 
         Subclasses call this inside :meth:`_build_args` for every image-bearing
         argument. During assembly the active resolver either materializes
         SimpleITK images to temp files or emits a preview placeholder.
+
+        Pass ``must_exist=True`` for an argument that must name a readable file at run
+        time, so a bad path fails here rather than inside the tool. Leave it False for
+        anything that may legitimately not be a path -- ``ImageMath`` scalar operands
+        and the ANTs ``NA`` mask placeholder both go through here.
         """
-        return self._active_resolver(value, name)
+        return self._active_resolver(value, name, must_exist=must_exist)
 
     # -- subclass hook --------------------------------------------------------
     def _build_args(self) -> list[str]:
@@ -178,7 +193,7 @@ class AntsCommand:
         raise NotImplementedError
 
     # -- command assembly & execution ----------------------------------------
-    def build_command(self, resolve: bool = False, materialize: bool = False) -> list[str]:
+    def build_command(self, resolve: bool = False, materialize: bool = False, validate: bool = False) -> list[str]:
         """Return the full argv for this command.
 
         Parameters
@@ -190,9 +205,13 @@ class AntsCommand:
             If True, write any in-memory SimpleITK image inputs to temp files and
             use their paths. Default False emits ``<sitk:...>`` placeholders for
             images so previews never write to disk.
+        validate:
+            If True, raise :class:`MissingInputError` for an input path that does not
+            exist. :meth:`run` sets this; plain assembly leaves it off, since building
+            argv that names a not-yet-written file is legitimate.
         """
         head = resolve_binary(self.binary, self.ants_path) if resolve else self.binary
-        self._active_resolver = self._resolver_for(materialize)
+        self._active_resolver = self._resolver_for(materialize, validate)
         self._materialize = materialize
         try:
             body = [*self._build_args(), *self._extra_args]
@@ -273,7 +292,7 @@ class AntsCommand:
             self._ws_base = str(temp_dir)
         self._ws_keep = keep_temp
 
-        argv = self.build_command(resolve=not dry_run, materialize=not dry_run)
+        argv = self.build_command(resolve=not dry_run, materialize=not dry_run, validate=not dry_run)
         outputs = self.declared_outputs()
 
         if dry_run:

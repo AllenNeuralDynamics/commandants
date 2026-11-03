@@ -242,13 +242,13 @@ class AntsRegistration(AntsCommand):
             if item[0] == "images":
                 _, fixed, moving, feature = item
                 rendered = bracket(
-                    self._resolve(fixed, "init_fixed"),
-                    self._resolve(moving, "init_moving"),
+                    self._resolve(fixed, "init_fixed", must_exist=True),
+                    self._resolve(moving, "init_moving", must_exist=True),
                     feature,
                 )
             else:  # ("file", transform, use_inverse)
                 _, transform, use_inverse = item
-                path = self._resolve(transform, "init_transform")
+                path = self._resolve(transform, "init_transform", must_exist=True)
                 rendered = bracket(path, True) if use_inverse else path
             args += ["--initial-moving-transform", rendered]
 

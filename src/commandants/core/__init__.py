@@ -6,6 +6,7 @@ from .exceptions import (
     AntsNotFoundError,
     AntsRuntimeError,
     CommandantsError,
+    MissingInputError,
 )
 from .executable import (
     clear_cache,
@@ -21,6 +22,7 @@ __all__ = [
     "CompletedAnts",
     "AntsNotFoundError",
     "AntsRuntimeError",
+    "MissingInputError",
     "CommandantsError",
     "resolve_binary",
     "is_available",

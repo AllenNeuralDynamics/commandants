@@ -111,18 +111,18 @@ class StptRegistration(StptToolCommand):
     def _build_args(self) -> List[str]:
         args: List[str] = [
             "-f",
-            self._resolve(self.fixed, "fixed"),
+            self._resolve(self.fixed, "fixed", must_exist=True),
             "-m",
-            self._resolve(self.moving, "moving"),
+            self._resolve(self.moving, "moving", must_exist=True),
             "-o",
             str(self.out_dir),
             "--stages",
             ",".join(self.stages),
         ]
         if self.fixed_mask is not None:
-            args += ["--fixed-mask", self._resolve(self.fixed_mask, "fixed_mask")]
+            args += ["--fixed-mask", self._resolve(self.fixed_mask, "fixed_mask", must_exist=True)]
         if self.moving_mask is not None:
-            args += ["--moving-mask", self._resolve(self.moving_mask, "moving_mask")]
+            args += ["--moving-mask", self._resolve(self.moving_mask, "moving_mask", must_exist=True)]
         for flag, value in (
             ("--threads", self.threads),
             ("--bins", self.bins),

@@ -70,7 +70,7 @@ class ResampleImage(AntsCommand):
     def _build_args(self) -> List[str]:
         args = [
             str(self.dimensionality),
-            self._resolve(self.input_image, "input"),
+            self._resolve(self.input_image, "input", must_exist=True),
             str(self.output_image),
             xjoin(self.dims),
         ]

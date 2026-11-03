@@ -8,6 +8,14 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **Input paths are validated before launch.** A path that does not exist now raises
+  `MissingInputError` naming the parameter and the value, instead of reaching the tool
+  and surfacing as an ITK exception that mentions neither. Applies to image and point-set
+  inputs across ANTs, elastix and STPT; `ImageMath` scalar operands and the ANTs `NA`
+  mask placeholder are exempt, since neither is a path. Only `run()` validates --
+  `build_command()` and `to_shell()` still assemble commands naming files you are about
+  to create.
+
 - **STPT/CCF backend scaffolding** (`commandants.stpt`): binary resolution for the
   user-built Allen `idp*` / `gridpoint` binaries via `$STPTPATH` + `PATH`, and a shared
   `StptToolCommand` base. `ToolSpec` gained `downloadable` / `install_command`, so an

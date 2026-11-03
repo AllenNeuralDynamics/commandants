@@ -32,8 +32,9 @@ from ..core.params import bracket, str_resolve
 
 PathLike = Union[str, Path]
 
-# Resolver signature: (value, name) -> str. Defaults to plain stringification;
-# a command builder passes a resolver that materializes in-memory images.
+# Resolver signature: (value, name, *, must_exist=False) -> str. Defaults to plain
+# stringification so a metric renders standalone; on a real run the command builder
+# passes one that materializes in-memory images and validates input paths.
 Resolve = Callable[..., str]
 
 
@@ -65,8 +66,8 @@ class _IntensityMetric(Metric):
 
     def to_arg(self, resolve: Resolve = str_resolve) -> str:
         return self.name + bracket(
-            resolve(self.fixed, "fixed"),
-            resolve(self.moving, "moving"),
+            resolve(self.fixed, "fixed", must_exist=True),
+            resolve(self.moving, "moving", must_exist=True),
             self.weight,
             self.radius_or_bins,
             self.sampling_strategy,
@@ -272,8 +273,8 @@ class PSE(Metric):
 
     def to_arg(self, resolve: Resolve = str_resolve) -> str:
         return self.name + bracket(
-            resolve(self.fixed_points, "fixed_points"),
-            resolve(self.moving_points, "moving_points"),
+            resolve(self.fixed_points, "fixed_points", must_exist=True),
+            resolve(self.moving_points, "moving_points", must_exist=True),
             self.weight,
             self.sampling_pct,
             self.boundary_only,
@@ -307,8 +308,8 @@ class ICP(Metric):
 
     def to_arg(self, resolve: Resolve = str_resolve) -> str:
         return self.name + bracket(
-            resolve(self.fixed_points, "fixed_points"),
-            resolve(self.moving_points, "moving_points"),
+            resolve(self.fixed_points, "fixed_points", must_exist=True),
+            resolve(self.moving_points, "moving_points", must_exist=True),
             self.weight,
             self.sampling_pct,
             self.boundary_only,
@@ -348,8 +349,8 @@ class JHCT(Metric):
 
     def to_arg(self, resolve: Resolve = str_resolve) -> str:
         return self.name + bracket(
-            resolve(self.fixed_points, "fixed_points"),
-            resolve(self.moving_points, "moving_points"),
+            resolve(self.fixed_points, "fixed_points", must_exist=True),
+            resolve(self.moving_points, "moving_points", must_exist=True),
             self.weight,
             self.sampling_pct,
             self.boundary_only,

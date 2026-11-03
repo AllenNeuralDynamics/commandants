@@ -17,6 +17,14 @@ class AntsNotFoundError(CommandantsError):
     """
 
 
+class MissingInputError(CommandantsError):
+    """Raised when an input image path does not exist, before the tool is launched.
+
+    Catching this here turns an opaque failure deep inside ITK into a message that
+    names the offending parameter and value.
+    """
+
+
 class AntsRuntimeError(CommandantsError):
     """Raised when an ANTs binary exits with a non-zero return code.
 

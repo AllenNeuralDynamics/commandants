@@ -82,7 +82,7 @@ class Transformix(ElastixToolCommand):
             str(self.out_dir),
         ]
         if self.moving is not None:
-            args += ["-in", self._resolve(self.moving, "input")]
+            args += ["-in", self._resolve(self.moving, "input", must_exist=True)]
         if self.points is not None:
             args += ["-def", str(self.points)]
         elif self.deformation_field:

@@ -54,14 +54,15 @@ def xjoin(values: Iterable[Any]) -> str:
     return "x".join(fmt_value(v) for v in values)
 
 
-def str_resolve(value: Any, name: str | None = None) -> str:
+def str_resolve(value: Any, name: str | None = None, *, must_exist: bool = False) -> str:
     """Default image resolver: just stringify.
 
     Command builders pass a smarter resolver (one that writes in-memory SimpleITK
     images to temp files) during a real run; this identity-like fallback is used
     when a metric/transform renders on its own or when no in-memory images are
-    involved. The ``name`` argument is accepted (and ignored) so it shares the
-    resolver call signature.
+    involved. The ``name`` and ``must_exist`` arguments are accepted (and ignored)
+    so it shares the resolver call signature -- existence is only ever checked on a
+    real run, which goes through the materializing resolver.
     """
     return fmt_value(value)
 

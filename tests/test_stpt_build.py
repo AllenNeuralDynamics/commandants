@@ -170,3 +170,12 @@ def test_benchmark_adapter_builds_and_normalizes(tmp_path):
     assert set(normalized) == {"warped", "transforms", "log"}
     assert normalized["warped"].endswith("stpt_Warped.nii")
     assert normalized["transforms"] == [command.declared_outputs()["affine"]]
+
+
+def test_upstream_optimizer_flag_is_opt_in(tmp_path):
+    """The Allen constants are reachable, and absent unless asked for."""
+    plain = StptRegistration("f.nii.gz", "m.nii.gz", str(tmp_path)).build_command()
+    assert "--upstream-optimizer" not in plain
+
+    upstream = StptRegistration("f.nii.gz", "m.nii.gz", str(tmp_path), upstream_optimizer=True).build_command()
+    assert "--upstream-optimizer" in upstream

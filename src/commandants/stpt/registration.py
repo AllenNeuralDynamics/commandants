@@ -49,6 +49,12 @@ class StptRegistration(StptToolCommand):
         Deformable (discrete MRF) knobs: pyramid levels, the control-grid spacing schedule
         in voxels (e.g. ``(30, 15, 8, 4)``), the smoothness weight (the driver's
         ``--lambda``), and the random-sample count. Leave None for the driver's defaults.
+    upstream_optimizer:
+        Use the Allen optimizer constants verbatim (translation scale 1e7, step
+        60 -> 0.1). The driver otherwise derives those from the image extent, because
+        the originals are calibrated to CCF-sized volumes in their physical units and
+        diverge on images of other sizes. Turn this on for fidelity on CCF-scale data;
+        leave it off for anything smaller.
     write_deformation_field:
         Also write the dense deformation field.
     warped_ext:
@@ -79,6 +85,7 @@ class StptRegistration(StptToolCommand):
         grid: Optional[Union[str, Sequence[int]]] = None,
         regularization: Optional[float] = None,
         samples: Optional[int] = None,
+        upstream_optimizer: bool = False,
         write_deformation_field: bool = False,
         warped_ext: str = ".nii.gz",
         verbose: bool = False,
@@ -104,6 +111,7 @@ class StptRegistration(StptToolCommand):
         self.grid = grid
         self.regularization = regularization
         self.samples = samples
+        self.upstream_optimizer = upstream_optimizer
         self.write_deformation_field = write_deformation_field
         self.warped_ext = warped_ext
         self.verbose = verbose
@@ -138,6 +146,8 @@ class StptRegistration(StptToolCommand):
             grid = self.grid if isinstance(self.grid, str) else ",".join(str(g) for g in self.grid)
             args += ["--grid", grid]
         args += ["--warped-ext", str(self.warped_ext)]
+        if self.upstream_optimizer:
+            args.append("--upstream-optimizer")
         if self.write_deformation_field:
             args.append("--write-deformation-field")
         if self.verbose:

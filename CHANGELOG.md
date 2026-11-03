@@ -4,10 +4,14 @@ All notable changes to this project are documented here. This file is maintained
 [commitizen](https://commitizen-tools.github.io/commitizen/) from conventional-commit
 messages. The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## 0.4.0
 
 ### Features
 
+- **`StptRegistration(upstream_optimizer=...)`** exposes the driver's
+  `--upstream-optimizer`, which uses the Allen optimizer constants verbatim (translation
+  scale 1e7, step 60 -> 0.1) instead of deriving them from the image extent. Worth turning
+  on for fidelity on CCF-scale volumes.
 - **Input paths are validated before launch.** A path that does not exist now raises
   `MissingInputError` naming the parameter and the value, instead of reaching the tool
   and surfacing as an ITK exception that mentions neither. Applies to image and point-set

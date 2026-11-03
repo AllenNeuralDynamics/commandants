@@ -432,6 +432,37 @@ schedule — rigid → affine Mattes MI (64 bins, center-of-gravity init, coarse
 shrink 8) → 3rd-order B-spline NCC over a 4-level grid. (The original deformable step uses a
 discrete MRF optimizer, so the B-spline stage matches in spirit, not mechanism.)
 
+## Allen STPT / CCF registration
+
+The third backend runs the **real** Allen algorithm from
+[AllenInstitute/stpt_registration](https://github.com/AllenInstitute/stpt_registration) -- MI rigid
+to MI affine to a **discrete MRF** deformable stage solved symmetrically. The ANTs and elastix
+`ccf_stpt` presets only approximate that last step with continuous optimizers.
+
+```python
+from commandants import stpt
+
+reg = stpt.presets.ccf_stpt("fixed.nii.gz", "moving.nii.gz", "out_dir", threads=8)
+print(reg.to_shell())  # inspect before running, as with every backend
+result = reg.run()
+warped = result.load("warped")  # -> SimpleITK.Image
+affine = result.outputs["affine"]  # out_dir/stpt_Affine.txt
+```
+
+SimpleITK images work anywhere a path does, exactly as with the ANTs and elastix wrappers:
+previews render them as `<sitk:...>` placeholders, runs materialize them to temp files, and
+`result.workspace.inputs` tells you where each one went.
+
+> **Binary.** This drives `stpt_register`, a minimal ITK-only driver built from a **separate,
+> Allen-licensed repository** -- the upstream code is BSD-2 *plus a non-commercial clause*, so it
+> is not vendored into this MIT package; commandants only invokes the binary. Put it on `PATH` or
+> set `$STPTPATH`. There is no download, hence no `install-stpt`.
+>
+> The upstream `idpProjection*` modules are **not** driven directly: they cannot register two 3D
+> volumes at all, assembling a volume slice-by-slice from one 2D file per `<sub-image>` with the
+> z-extraction pinned to slice 0, on top of needing a LIMS-shaped XML, a structured
+> `model_directory`, and JPEG2000/Kakadu.
+
 ## Benchmarking backends against each other
 
 Register the **same image pair** with several backends and compare timings:
@@ -481,7 +512,7 @@ commandants/
   core/           binary resolution, the AntsCommand base, result objects
   registration/   AntsRegistration, metrics (incl. PSE/ICP/JHCT), transforms, stages, apply
   elastix/        Elastix, Transformix, ParameterMap, presets (elastix backend)
-  stpt/           Allen STPT/CCF backend (user-built binaries; scaffolding)
+  stpt/           Allen STPT/CCF backend (StptRegistration, presets)
   preprocessing/  N4BiasFieldCorrection, ThresholdImage, ImageMath, ResampleImage
   io/             point-set CSV + SimpleITK in-memory support
   benchmark.py    cross-backend comparison harness (Backend adapters + compare())

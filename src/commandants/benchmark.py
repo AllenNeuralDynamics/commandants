@@ -135,6 +135,34 @@ def _build_elastix(
     )
 
 
+def _build_stpt(
+    fixed: Any,
+    moving: Any,
+    out_dir: str,
+    *,
+    preset: str = "affine",
+    fixed_mask: Any = None,
+    moving_mask: Any = None,
+    threads: Optional[int] = None,
+    warped_ext: str = DEFAULT_WARPED_EXT,
+    **kwargs: Any,
+) -> AntsCommand:
+    """Build an Allen STPT/CCF registration from ``commandants.stpt.presets``."""
+    from .stpt import presets as stpt_presets
+
+    builder = getattr(stpt_presets, preset)
+    return builder(
+        fixed,
+        moving,
+        out_dir,
+        fixed_mask=fixed_mask,
+        moving_mask=moving_mask,
+        threads=threads,
+        warped_ext=warped_ext,
+        **kwargs,
+    )
+
+
 def _normalize_ants(command: AntsCommand, result: CompletedAnts) -> dict:
     """ANTs: warped comes from declared outputs, transforms from expected_transforms()."""
     info = command.expected_transforms()
@@ -158,10 +186,22 @@ def _normalize_elastix(command: AntsCommand, result: CompletedAnts) -> dict:  # 
     }
 
 
+def _normalize_stpt(command: AntsCommand, result: CompletedAnts) -> dict:  # noqa: ARG001
+    """STPT declares everything. Transforms are listed deformable-first, as ANTs does."""
+    outputs = result.outputs
+    transforms = [p for p in (outputs.get("warp"), outputs.get("affine")) if p]
+    return {
+        "warped": outputs.get("warped"),
+        "transforms": transforms,
+        "log": outputs.get("log"),
+    }
+
+
 #: Registry of known backends. Add one with :func:`register_backend`.
 BACKENDS: dict[str, Backend] = {
     "ants": Backend("ants", "antsRegistration", _build_ants, _normalize_ants),
     "elastix": Backend("elastix", "elastix", _build_elastix, _normalize_elastix),
+    "stpt": Backend("stpt", "stpt_register", _build_stpt, _normalize_stpt),
 }
 
 
@@ -282,7 +322,7 @@ def compare(
     moving: Any,
     out_dir: str | os.PathLike[str],
     *,
-    backends: Sequence[str] = ("ants", "elastix"),
+    backends: Sequence[str] = ("ants", "elastix", "stpt"),
     preset: str = "affine",
     fixed_mask: Any = None,
     moving_mask: Any = None,

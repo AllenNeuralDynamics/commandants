@@ -19,7 +19,7 @@ Quickstart
 
 from __future__ import annotations
 
-from . import benchmark, elastix, presets
+from . import benchmark, elastix, presets, stpt
 from .core import (
     AntsCommand,
     AntsNotFoundError,
@@ -133,6 +133,8 @@ __all__ = [
     "ccf_stpt",
     # cross-backend benchmarking
     "benchmark",
+    # Allen STPT/CCF backend
+    "stpt",
     # in-memory images + point I/O
     "TempWorkspace",
     "is_sitk_image",

@@ -15,6 +15,12 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
   `resolve_binary` is spec-driven rather than branching on ANTs-vs-elastix. Install-less
   tools never attempt an auto-download and their not-found message omits `install-*`.
   `commandants version` reports STPT availability. The ANTs and elastix paths are unchanged.
+- **Allen STPT/CCF wrapper** (`commandants.stpt`): `StptRegistration` plus
+  `presets.rigid/affine/ccf_global/ccf_stpt`, driving the `stpt_register` ITK-only driver
+  (built from a separate Allen-licensed repo; the upstream code is BSD-2 + non-commercial, so
+  it is not vendored here). Full commandants ergonomics -- `to_shell()` preview, `run()`,
+  declared outputs, `extra_args()`, and SimpleITK images anywhere a path is accepted. Registered
+  as the third `benchmark` backend, so `compare()` now runs ANTs vs elastix vs STPT by default.
 - **Cross-backend benchmark harness** (`commandants.benchmark`): `compare()` registers the
   same image pair with several backends and returns machine-readable trials
   (`BenchmarkReport.summary()` / `to_table()` / `to_csv()`). A `Backend` adapter normalizes

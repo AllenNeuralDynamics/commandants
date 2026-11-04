@@ -14,9 +14,9 @@
 #   - Ubuntu 22.04 (jammy) or 24.04 (noble) base image. Those are the releases that
 #     ship libinsighttoolkit5-dev; gridpoint needs ITK 5. On 20.04 (focal) apt only
 #     has ITK 4 and this script will stop with a clear message.
-#   - gridpoint is a PRIVATE repo. Either make it public, or expose a token to the
-#     build as GITHUB_TOKEN (Code Ocean secret / environment variable). Without one
-#     the gridpoint step is skipped and the other two backends still work.
+#   - gridpoint is a public repo, so no credentials are needed. GITHUB_TOKEN is still
+#     honoured if set (useful against API rate limits, or if the repo is ever made
+#     private again). If the gridpoint step fails the other two backends still work.
 #
 set -euo pipefail
 
@@ -118,8 +118,8 @@ if build_gridpoint; then
   echo "gridpoint built -> ${STPTPATH}/gridpoint"
 else
   echo "WARNING: gridpoint was not installed; see the error above."
-  echo "         A clone failure is almost always auth: the repo is private, so set"
-  echo "         GITHUB_TOKEN as a capsule secret or make the repo public."
+  echo "         gridpoint is public, so a clone failure is usually network or DNS"
+  echo "         rather than auth; a build failure is usually a missing ITK 5."
   echo "         Continuing with the ANTs and elastix backends only."
 fi
 

@@ -81,15 +81,34 @@ def test_declared_outputs():
     assert outputs["warped"] == os.path.join("out", "stpt_Warped.nii.gz")
     assert outputs["affine"] == os.path.join("out", "stpt_Affine.txt")
     assert outputs["warp"] == os.path.join("out", "stpt_Warp.nii.gz")
+    assert outputs["inverse_warp"] == os.path.join("out", "stpt_InverseWarp.nii.gz")
     assert outputs["log"] == os.path.join("out", "stpt.log")
 
 
 def test_declared_outputs_track_the_requested_work():
-    # No deformation field requested -> not declared.
-    assert "warp" not in StptRegistration("f.nii", "m.nii", "out").declared_outputs()
+    # No deformation field requested -> neither field is declared.
+    outputs = StptRegistration("f.nii", "m.nii", "out").declared_outputs()
+    assert "warp" not in outputs
+    assert "inverse_warp" not in outputs
     # Deformable-only -> no linear transform is produced.
     deformable = StptRegistration("f.nii", "m.nii", "out", stages=("deformable",))
     assert "affine" not in deformable.declared_outputs()
+
+
+def test_inverse_warp_is_not_part_of_the_forward_transform_chain():
+    """The benchmark composes a moving -> fixed chain; the backward field is the other
+    direction and must not be spliced into it."""
+    from commandants.benchmark import BACKENDS
+    from commandants.core.runner import CompletedAnts
+
+    command = StptRegistration("f.nii", "m.nii", "out", write_deformation_field=True)
+    normalized = BACKENDS["stpt"].normalize(
+        command, CompletedAnts(argv=[], returncode=0, outputs=command.declared_outputs())
+    )
+    assert normalized["transforms"] == [
+        os.path.join("out", "stpt_Warp.nii.gz"),
+        os.path.join("out", "stpt_Affine.txt"),
+    ]
 
 
 def test_warped_ext_is_reflected_in_argv_and_outputs():

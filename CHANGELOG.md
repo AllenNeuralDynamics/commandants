@@ -4,6 +4,19 @@ All notable changes to this project are documented here. This file is maintained
 [commitizen](https://commitizen-tools.github.io/commitizen/) from conventional-commit
 messages. The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+### Features
+
+- **`StptRegistration` declares `inverse_warp`.** With `write_deformation_field=True`,
+  `gridpoint` now writes `stpt_InverseWarp.nii.gz` beside `stpt_Warp.nii.gz`, and the
+  wrapper declares it as the `"inverse_warp"` output. The deformable stage is symmetric,
+  so this backward field comes out of the optimization rather than from inverting the
+  forward one; it is the direction needed to carry fixed-space data (atlas labels,
+  annotations, point sets) onto the moving image. It is deliberately **not** added to the
+  benchmark's `transforms` chain, which is the forward composition only. Requires a
+  `gridpoint` build from commit `c413a3b` or later.
+
 ## 0.4.0
 
 ### Features

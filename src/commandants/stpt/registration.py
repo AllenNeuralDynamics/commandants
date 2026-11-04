@@ -34,8 +34,8 @@ class StptRegistration(StptToolCommand):
         Fixed and moving images (path or in-memory SimpleITK image).
     out_dir:
         Output directory (created at run time). The driver names its own outputs there:
-        ``stpt_Warped<ext>``, ``stpt_Affine.txt``, optionally ``stpt_Warp.nii.gz``, and
-        ``stpt.log``.
+        ``stpt_Warped<ext>``, ``stpt_Affine.txt``, optionally ``stpt_Warp.nii.gz`` and
+        ``stpt_InverseWarp.nii.gz``, and ``stpt.log``.
     fixed_mask, moving_mask:
         Optional metric masks (path or SimpleITK image).
     stages:
@@ -56,7 +56,12 @@ class StptRegistration(StptToolCommand):
         diverge on images of other sizes. Turn this on for fidelity on CCF-scale data;
         leave it off for anything smaller.
     write_deformation_field:
-        Also write the dense deformation field.
+        Also write the dense deformation fields -- both the forward one (fixed -> moving,
+        declared as ``"warp"``) and the backward one (moving -> fixed, declared as
+        ``"inverse_warp"``). The deformable stage is symmetric, so the backward field is
+        a product of the optimization rather than a numerical inversion of the forward
+        one; it is what you need to carry fixed-space data such as atlas labels back onto
+        the moving image.
     warped_ext:
         Extension for the warped image, default ``".nii.gz"``. Set ``".nii"`` to skip
         compression -- the cross-backend benchmark does this so timings stay comparable.
@@ -164,6 +169,7 @@ class StptRegistration(StptToolCommand):
             outputs["affine"] = os.path.join(out, "stpt_Affine.txt")
         if self.write_deformation_field:
             outputs["warp"] = os.path.join(out, "stpt_Warp.nii.gz")
+            outputs["inverse_warp"] = os.path.join(out, "stpt_InverseWarp.nii.gz")
         return outputs
 
 

@@ -37,7 +37,27 @@ class StptRegistration(StptToolCommand):
         ``stpt_Warped<ext>``, ``stpt_Affine.txt``, optionally ``stpt_Warp.nii.gz`` and
         ``stpt_InverseWarp.nii.gz``, and ``stpt.log``.
     fixed_mask, moving_mask:
-        Optional metric masks (path or SimpleITK image).
+        Optional metric masks (path or SimpleITK image); non-zero means inside.
+
+        They restrict both the linear and the deformable stages, but differently.
+        The linear stages hand them to the Mattes mutual-information metric, which
+        is the same idea as the ANTs ``-x [fixedMask,movingMask]`` option. The
+        deformable stage applies them to its *control grid*: a node whose cell holds
+        no in-mask voxel gets a flat zero data cost, so the regularizer alone places
+        it.
+
+        Two things follow. Masked-out regions are **not** held still -- their
+        displacement is a smooth extrapolation from the masked-in neighbourhood.
+        And masking is per control node, not per sample, so the effective boundary
+        is quantized to each level's grid spacing (30 voxels down to 4, by default).
+
+        The moving mask is carried through the linear transform, then re-displaced
+        by the deformation field at every pyramid level, so it follows the image it
+        describes as the alignment improves.
+
+        Masked runs are also faster, since a skipped node skips the sampling loop.
+        Requires a ``gridpoint`` build from commit ``8769b8e`` or later; older
+        builds accept the flags but apply them to the linear stages only.
     stages:
         Which stages to run, any ordered subset of :data:`STAGES`.
     threads:

@@ -8,6 +8,17 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **`StptRegistration` masks now reach the deformable stage.** They previously
+  restricted the rigid and affine stages only -- the deformable stage, which does the
+  fine alignment, ignored them and would happily deform to match the structure the mask
+  was meant to exclude. The driver now masks the MRF control grid as well: a node with
+  no in-mask evidence takes a flat zero data cost and is placed by the regularizer
+  alone. Masked-out regions are therefore smoothly extrapolated, not held still, and
+  masking is per control node rather than per sample. The moving mask is carried
+  through the linear transform and re-displaced by the deformation field at every
+  pyramid level. Masked runs are faster, since a skipped node skips the sampling loop.
+  Requires a `gridpoint` build from commit `8769b8e` or later.
+
 - **`StptRegistration` declares `inverse_warp`.** With `write_deformation_field=True`,
   `gridpoint` now writes `stpt_InverseWarp.nii.gz` beside `stpt_Warp.nii.gz`, and the
   wrapper declares it as the `"inverse_warp"` output. The deformable stage is symmetric,

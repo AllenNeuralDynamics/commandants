@@ -24,6 +24,9 @@ PathLike = Union[str, Path]
 #: Pipeline stages the driver understands, in execution order.
 STAGES = ("rigid", "affine", "deformable")
 
+#: Grids the deformation fields can be written on. See ``warp_resolution``.
+WARP_RESOLUTIONS = ("grid", "full")
+
 
 class StptRegistration(StptToolCommand):
     """Builder for a ``gridpoint`` invocation.
@@ -75,6 +78,26 @@ class StptRegistration(StptToolCommand):
         the originals are calibrated to CCF-sized volumes in their physical units and
         diverge on images of other sizes. Turn this on for fidelity on CCF-scale data;
         leave it off for anything smaller.
+    warp_resolution:
+        Which grid the deformation fields are written on. ``None`` (the default) does
+        not pass the flag at all, so the driver's own default applies -- and so this
+        wrapper keeps working against builds that predate the option.
+
+        ``"grid"`` writes the fields on the control grid they were interpolated from.
+        Every pyramid level of the deformable stage accumulates at control-grid
+        resolution and the dense field is produced by a single trilinear upsample at
+        the end, so the control grid holds the whole of the field's information:
+        storing it per voxel stores every number ``spacing**3`` times over, which is
+        64x at the default schedule. ITK and ANTs read a displacement field through
+        its origin, spacing and direction and have never required it to share the
+        reference image's grid, so the smaller file is a drop-in.
+
+        ``"full"`` writes one vector per voxel of the fixed grid. Use it when
+        something downstream needs the dense array itself rather than a transform
+        ANTs will resample.
+
+        Requires a ``gridpoint`` build with the ``--warp-resolution`` option; older
+        builds reject the flag outright, which is why the default sends nothing.
     write_deformation_field:
         Also write the dense deformation fields -- both the forward one (fixed -> moving,
         declared as ``"warp"``) and the backward one (moving -> fixed, declared as
@@ -112,6 +135,7 @@ class StptRegistration(StptToolCommand):
         samples: Optional[int] = None,
         upstream_optimizer: bool = False,
         write_deformation_field: bool = False,
+        warp_resolution: Optional[str] = None,
         warped_ext: str = ".nii.gz",
         verbose: bool = False,
         stpt_path: Optional[PathLike] = None,
@@ -122,6 +146,11 @@ class StptRegistration(StptToolCommand):
             raise ValueError(f"Unknown stage(s) {unknown}; use any of {list(STAGES)}.")
         if not stages:
             raise ValueError("gridpoint needs at least one stage.")
+        if warp_resolution is not None and warp_resolution not in WARP_RESOLUTIONS:
+            raise ValueError(
+                f"warp_resolution must be one of {list(WARP_RESOLUTIONS)} or None, "
+                f"not {warp_resolution!r}."
+            )
         self.fixed = fixed
         self.moving = moving
         self.out_dir = out_dir
@@ -138,6 +167,7 @@ class StptRegistration(StptToolCommand):
         self.samples = samples
         self.upstream_optimizer = upstream_optimizer
         self.write_deformation_field = write_deformation_field
+        self.warp_resolution = warp_resolution
         self.warped_ext = warped_ext
         self.verbose = verbose
 
@@ -175,6 +205,8 @@ class StptRegistration(StptToolCommand):
             args.append("--upstream-optimizer")
         if self.write_deformation_field:
             args.append("--write-deformation-field")
+        if self.warp_resolution is not None:
+            args += ["--warp-resolution", str(self.warp_resolution)]
         if self.verbose:
             args.append("-v")
         return args
@@ -193,4 +225,4 @@ class StptRegistration(StptToolCommand):
         return outputs
 
 
-__all__ = ["StptRegistration", "STAGES"]
+__all__ = ["StptRegistration", "STAGES", "WARP_RESOLUTIONS"]

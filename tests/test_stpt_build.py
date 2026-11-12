@@ -198,3 +198,26 @@ def test_upstream_optimizer_flag_is_opt_in(tmp_path):
 
     upstream = StptRegistration("f.nii.gz", "m.nii.gz", str(tmp_path), upstream_optimizer=True).build_command()
     assert "--upstream-optimizer" in upstream
+
+
+def test_warp_resolution_is_reachable_and_absent_by_default(tmp_path):
+    """Default sends no flag, so the wrapper still works against older drivers."""
+    plain = StptRegistration(
+        "f.nii.gz", "m.nii.gz", str(tmp_path), write_deformation_field=True
+    ).build_command()
+    assert "--warp-resolution" not in plain
+
+    for value in ("grid", "full"):
+        argv = StptRegistration(
+            "f.nii.gz",
+            "m.nii.gz",
+            str(tmp_path),
+            write_deformation_field=True,
+            warp_resolution=value,
+        ).build_command()
+        assert argv[argv.index("--warp-resolution") + 1] == value
+
+
+def test_invalid_warp_resolution_is_rejected():
+    with pytest.raises(ValueError, match="warp_resolution"):
+        StptRegistration("f.nii", "m.nii", "out", warp_resolution="coarse")

@@ -8,6 +8,15 @@ messages. The format is based on [Keep a Changelog](https://keepachangelog.com/)
 
 ### Features
 
+- **`StptRegistration(warp_resolution=...)`** selects which grid the deformation fields
+  are written on. `"grid"` writes them on the control grid they were interpolated from,
+  which is the whole of the field's information at `spacing**3` fewer samples -- 64x at
+  the default schedule, taking a 10 um CCF field from about 12 GB to about 195 MB. ITK
+  and ANTs read a displacement field through its origin, spacing and direction and never
+  required it to match the reference grid, so the smaller file is a drop-in. `"full"`
+  writes one vector per voxel. The default is `None`, which passes no flag and leaves the
+  choice to the driver, so this keeps working against builds that predate the option.
+
 - **`StptRegistration` masks now reach the deformable stage.** They previously
   restricted the rigid and affine stages only -- the deformable stage, which does the
   fine alignment, ignored them and would happily deform to match the structure the mask

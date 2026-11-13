@@ -11,7 +11,8 @@ downstream template code needs no changes:
     0GenericAffine.mat        collapsed rigid+affine, maps fixed -> moving
     1Warp.nii.gz              forward field, fixed -> moving
     1InverseWarp.nii.gz       backward field, moving -> fixed
-    <sample>_warped.nii.gz    moving resampled onto the fixed grid
+    <sample>_warped.nii       moving resampled onto the fixed grid (uncompressed by
+                              default, so the template step can memory-map slabs of it)
     stpt.log                  gridpoint's settings, version and outcome (extra)
 
 Transform lists, in ANTs order (antsApplyTransforms applies -t right to left):
@@ -71,6 +72,11 @@ parser.add_argument("--pad", default=100, type=int,
                     help="total CCF padding per axis, in voxels, matching "
                          "ants.pad_image(pad_width=[N,N,N]) -- half is added to each side")
 parser.add_argument("--threads", default=psutil.cpu_count(logical=False) or 1, type=int)
+parser.add_argument("--warped-ext", default=".nii", choices=[".nii", ".nii.gz"],
+                    help="extension for the warped image. .nii (the default) is "
+                         "uncompressed and so can be memory-mapped a slab at a time by "
+                         "the template step; .nii.gz is ~2x smaller but only readable "
+                         "front to back.")
 parser.add_argument("--no-fixed-mask", action="store_true",
                     help="skip building a CCF brain mask from the annotation volume")
 args = parser.parse_args()
@@ -210,6 +216,12 @@ grid_reg = stpt_presets.ccf_stpt(
     levels=args.levels,
     linear_iterations=args.linear_iterations,
     threads=args.threads,
+    # Uncompressed, so the template step can memory-map a slab out of each warped image
+    # instead of inflating the whole thing. gzip is a sequential stream: reading voxel
+    # range [a, b) from a .nii.gz means decompressing everything before it, every time,
+    # which turns an out-of-core median into an O(images x slabs x filesize) read.
+    # It also removes a couple of minutes of compression per sample.
+    warped_ext=args.warped_ext,
     write_deformation_field=True,
     verbose=True,
 )
@@ -250,7 +262,7 @@ def publish_ants_layout():
     renames = [
         ("warp", "1Warp.nii.gz"),
         ("inverse_warp", "1InverseWarp.nii.gz"),
-        ("warped", f"{sample_name}_warped.nii.gz"),
+        ("warped", f"{sample_name}_warped{args.warped_ext}"),
     ]
     for key, name in renames:
         if key not in result.outputs:
